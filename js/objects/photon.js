@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export const LIGHT_SPEED = 0.1;
+export const LIGHT_SPEED = 0.01;
 
 export class Photon {
 
@@ -10,7 +10,7 @@ export class Photon {
     this.speed = LIGHT_SPEED;
     this.obj = null;
 
-    this.line = [this.position];
+    this.line = [];
   }
 
   render(scene) {
@@ -21,6 +21,15 @@ export class Photon {
 
     this.obj = line;
     scene.add(line);
+  }
+
+  move(x,y) {
+    this.position.set(x,y,0);
+    this.line.push(this.position.clone());
+
+    const newGeometry = new THREE.BufferGeometry().setFromPoints(this.line);
+    this.obj.geometry.dispose();
+    this.obj.geometry = newGeometry;
   }
 
   updatePosition() {
