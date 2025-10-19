@@ -10,7 +10,7 @@
   "author": "Jakub Słowikowski",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack serve --open --config webpack.config.dev.js",
+    "start": "webpack serve --config webpack.config.dev.js",
     "build": "webpack --config webpack.config.prod.js"
   },
   "devDependencies": {
