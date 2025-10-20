@@ -6,7 +6,7 @@ import { config } from './config';
 const scene = new THREE.Scene();
 addAxesHelper();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
-camera.position.set(0, 0, 150);
+camera.position.set(0, 0, 300);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({
@@ -35,46 +35,78 @@ renderer.setAnimationLoop(animate);
 function animate(time) {
   photons.forEach(photon => {
     if (photon.isDone) return;
-
-    const dLambda = 0.001; // step size
-    const c = config.LIGHT_SPEED;
-    const rs = blackHole.rs;
-
-    // cartesian coordinates
-    const x = photon.position.x;
-    const y = photon.position.y;
-
-    // polar coordinates
-    const r = Math.hypot(x, y);
-    const phi = Math.atan2(y, x);
-
-    if (r <= rs) {
-      console.log('Photon has crossed the event horizon and is absorbed by the black hole.');
-      photon.isDone = true;
-      return;
-    }
-
-    const dr_2 = ((-c * c * rs) / 2 * r * r) + (r * photon.dphi * photon.dphi); // approximation of r acceleration
-    const dphi_2 = -(2 / r) * photon.dr * photon.dphi; // phi acceleration
-    console.log(`photon accelerations: dr_2=${dr_2}, dphi_2=${dphi_2}`);
-
-    photon.dr += dr_2 * dLambda;
-    photon.dphi += dphi_2 * dLambda;
-    console.log(`photon velocities: dr=${photon.dr}, dphi=${photon.dphi}`);
-
-    const newR = r + photon.dr * dLambda; // Euler integration
-    const newPhi = phi + photon.dphi * dLambda;
-    console.log(`photon new polar position: r=${newR}, phi=${newPhi}`);
-
-    const newX = newR * Math.cos(newPhi);
-    const newY = newR * Math.sin(newPhi);
-    console.log(`photon new cartesian position: x=${newX}, y=${newY}`);
-
-    photon.move(newX, newY);
+    rk4Step(photon, config.PHOTON_STEP_SIZE);
   });
 
   renderer.render(scene, camera);
 }
+
+function computeGeodesic(state, c, rs) {
+  const r = state[0];
+  const dr = state[2];
+  const dphi = state[3];
+
+  const r_acc = (-c * c * rs) / (2 * r * r) + r * dphi * dphi; // approximation of 'r' acceleration
+  const phi_acc = -(2 / r) * dr * dphi; // 'phi' acceleration
+
+  return [dr, dphi, r_acc, phi_acc];
+}
+
+function rk4Step(photon, stepSize) {
+  // This function would compute the next position and velocity of the photon
+  // using the Runge-Kutta 4th order method.
+
+  // stepSize is the affine parameter increment (dLambda)
+  const c = config.LIGHT_SPEED;
+  const rs = blackHole.rs;
+
+  const x = photon.position.x;
+  const y = photon.position.y;
+  const r = Math.hypot(x, y);
+  const phi = Math.atan2(y, x);
+  const dr = photon.dr;
+  const dphi = photon.dphi;
+
+  console.log(x, y, r, phi, dr, dphi);
+
+  if (r <= rs) {
+    console.log('Photon has crossed the event horizon and is absorbed by the black hole.');
+    photon.isDone = true;
+    return;
+  }
+
+  let state = [r, phi, dr, dphi];
+
+  console.log(r, phi, dr, dphi);
+
+  const k1 = computeGeodesic(state, c, rs);
+  const state2 = state.map((v, i) => v + k1[i] * stepSize / 2);
+  const k2 = computeGeodesic(state2, c, rs);
+  const state3 = state.map((v, i) => v + k2[i] * stepSize / 2);
+  const k3 = computeGeodesic(state3, c, rs);
+  const state4 = state.map((v, i) => v + k3[i] * stepSize);
+  const k4 = computeGeodesic(state4, c, rs);
+
+  const newState = state.map(
+    (v, i) => v + (stepSize / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
+  );
+
+  // Update photon velocities
+  photon.dr = newState[2];
+  photon.dphi = newState[3];
+
+  // Update polar coordinates
+  const newR = newState[0];
+  const newPhi = newState[1];
+
+  // Transform back to cartesian coordinates
+  const newX = newR * Math.cos(newPhi);
+  const newY = newR * Math.sin(newPhi);
+  console.log(`Photon position: x=${newX.toFixed(2)}, y=${newY.toFixed(2)}`);
+
+  photon.move(newX, newY);
+}
+
 
 function addAxesHelper() {
   const axesHelper = new THREE.AxesHelper(5);
