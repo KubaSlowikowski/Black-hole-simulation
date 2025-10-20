@@ -13,8 +13,8 @@ export class Photon {
 
     this.line = [];
 
-    this.dr = 0.1;
-    this.dphi = 0.15;
+    this.dr = 0;
+    this.dphi = 0.0;
 
     this.isDone = false;
   }

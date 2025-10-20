@@ -6,7 +6,7 @@ import { config } from './config';
 const scene = new THREE.Scene();
 addAxesHelper();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
-camera.position.set(0, 0, 50);
+camera.position.set(0, 0, 150);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({
@@ -20,7 +20,7 @@ blackHole.render(scene);
 
 const NUMBER_OF_PHOTONS = 1;
 const photons = [
-  new Photon(new THREE.Vector3(-30, 5, 0), new THREE.Vector3(1, 0, 0))
+  new Photon(new THREE.Vector3(-100, 5, 0), new THREE.Vector3(1, 0, 0))
 ];
 // for (let i = 0; i < NUMBER_OF_PHOTONS; i++) {
 //   const photon = new Photon(new THREE.Vector3(-10, 2.5 * i + 2.5, 0), new THREE.Vector3(1, 0, 0));
@@ -36,7 +36,7 @@ function animate(time) {
   photons.forEach(photon => {
     if (photon.isDone) return;
 
-    const dLambda = 0.0003; // step size
+    const dLambda = 0.001; // step size
     const c = config.LIGHT_SPEED;
     const rs = blackHole.rs;
 
@@ -62,8 +62,8 @@ function animate(time) {
     photon.dphi += dphi_2 * dLambda;
     console.log(`photon velocities: dr=${photon.dr}, dphi=${photon.dphi}`);
 
-    const newR = r + photon.dr;
-    const newPhi = phi + photon.dphi;
+    const newR = r + photon.dr * dLambda; // Euler integration
+    const newPhi = phi + photon.dphi * dLambda;
     console.log(`photon new polar position: r=${newR}, phi=${newPhi}`);
 
     const newX = newR * Math.cos(newPhi);
