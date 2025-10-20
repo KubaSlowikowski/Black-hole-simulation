@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { config } from '../config';
 
 export const LIGHT_SPEED = 0.01;
 
@@ -7,10 +8,15 @@ export class Photon {
   constructor(initialPosition, initialDirection) {
     this.position = initialPosition.clone();
     this.direction = initialDirection.clone().normalize();
-    this.speed = LIGHT_SPEED;
+    // this.speed = LIGHT_SPEED;
     this.obj = null;
 
     this.line = [];
+
+    this.dr = 0.1;
+    this.dphi = 0.15;
+
+    this.isDone = false;
   }
 
   render(scene) {
@@ -23,8 +29,8 @@ export class Photon {
     scene.add(line);
   }
 
-  move(x,y) {
-    this.position.set(x,y,0);
+  move(x, y) {
+    this.position.set(x, y, 0);
     this.line.push(this.position.clone());
 
     const newGeometry = new THREE.BufferGeometry().setFromPoints(this.line);
@@ -32,13 +38,13 @@ export class Photon {
     this.obj.geometry = newGeometry;
   }
 
-  updatePosition() {
-    const deltaPosition = this.direction.clone().multiplyScalar(this.speed);
-    this.position.add(deltaPosition);
-    this.line.push(this.position.clone());
-
-    const newGeometry = new THREE.BufferGeometry().setFromPoints(this.line);
-    this.obj.geometry.dispose();
-    this.obj.geometry = newGeometry;
-  }
+  // updatePosition() {
+  //   const deltaPosition = this.direction.clone().multiplyScalar(this.speed);
+  //   this.position.add(deltaPosition);
+  //   this.line.push(this.position.clone());
+  //
+  //   const newGeometry = new THREE.BufferGeometry().setFromPoints(this.line);
+  //   this.obj.geometry.dispose();
+  //   this.obj.geometry = newGeometry;
+  // }
 }
