@@ -5,16 +5,14 @@ export const LIGHT_SPEED = 0.01;
 
 export class Photon {
 
-  constructor(initialPosition, initialDirection) {
+  constructor(initialPosition, dr, dphi) {
     this.position = initialPosition.clone();
-    this.direction = initialDirection.clone().normalize();
-    // this.speed = LIGHT_SPEED;
     this.obj = null;
 
     this.line = [];
 
-    this.dr = -0.1;
-    this.dphi = 0.0005;
+    this.dr = dr;
+    this.dphi = dphi;
 
     this.isDone = false;
   }

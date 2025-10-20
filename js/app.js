@@ -3,10 +3,39 @@ import { BlackHole } from './objects/blackHole';
 import { Photon } from './objects/photon';
 import { config } from './config';
 
+function createPhoton(rs, c) {
+  const r0 = rs * 25; // Initial radial position far from the black hole
+  const phi0 = 0;
+
+  // Choose impact parameter b (e.g., b = r0 for grazing trajectory)
+  const b_max = r0 / Math.sqrt(1 - rs / r0);
+  const b = b_max * 0.1;
+
+// Set dphi/dλ = c * b / r0^2
+  const dphi = c * b / (r0 * r0);
+
+// Solve for dr/dλ using the null constraint:
+  const sqrtArg = (1 - rs / r0) * c * c - (r0 * r0) * (dphi * dphi);
+
+  if (sqrtArg < 0) {
+    throw new Error('Invalid initial conditions: sqrt argument is negative');
+  }
+
+  const dr = -Math.sqrt(sqrtArg) / (1 - rs / r0);
+
+  // Use phi0 to set initial position
+  const x0 = r0 * Math.cos(phi0);
+  const y0 = r0 * Math.sin(phi0);
+
+  console.log(`Creating photon at (x0=${x0}, y0=${y0}) with dr=${dr}, dphi=${dphi}`);
+
+  return new Photon(new THREE.Vector3(-x0, y0, 0), dr, dphi);
+}
+
 const scene = new THREE.Scene();
 addAxesHelper();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
-camera.position.set(0, 0, 300);
+camera.position.set(0, 0, 75);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({
@@ -20,7 +49,8 @@ blackHole.render(scene);
 
 const NUMBER_OF_PHOTONS = 1;
 const photons = [
-  new Photon(new THREE.Vector3(-100, 5, 0), new THREE.Vector3(1, 0, 0))
+  createPhoton(blackHole.rs, config.LIGHT_SPEED)
+  // new Photon(new THREE.Vector3(-100, 5, 0), new THREE.Vector3(1, 0, 0))
 ];
 // for (let i = 0; i < NUMBER_OF_PHOTONS; i++) {
 //   const photon = new Photon(new THREE.Vector3(-10, 2.5 * i + 2.5, 0), new THREE.Vector3(1, 0, 0));
@@ -40,6 +70,7 @@ function animate(time) {
 
   renderer.render(scene, camera);
 }
+
 
 function computeGeodesic(state, c, rs) {
   const r = state[0];
@@ -67,7 +98,7 @@ function rk4Step(photon, stepSize) {
   const dr = photon.dr;
   const dphi = photon.dphi;
 
-  console.log(x, y, r, phi, dr, dphi);
+  // console.log(x, y, r, phi, dr, dphi);
 
   if (r <= rs) {
     console.log('Photon has crossed the event horizon and is absorbed by the black hole.');
@@ -76,8 +107,6 @@ function rk4Step(photon, stepSize) {
   }
 
   let state = [r, phi, dr, dphi];
-
-  console.log(r, phi, dr, dphi);
 
   const k1 = computeGeodesic(state, c, rs);
   const state2 = state.map((v, i) => v + k1[i] * stepSize / 2);
@@ -94,6 +123,8 @@ function rk4Step(photon, stepSize) {
   // Update photon velocities
   photon.dr = newState[2];
   photon.dphi = newState[3];
+
+  console.log(`Photon velocities: dr=${photon.dr.toFixed(4)}, dphi=${photon.dphi.toFixed(4)}`);
 
   // Update polar coordinates
   const newR = newState[0];
