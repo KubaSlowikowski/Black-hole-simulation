@@ -5,7 +5,7 @@ export const LIGHT_SPEED = 0.01;
 
 export class Photon {
 
-  constructor(initialPosition, dr, dphi) {
+  constructor(initialPosition, dr, dphi, E, L) {
     this.position = initialPosition.clone();
     this.obj = null;
 
@@ -13,6 +13,9 @@ export class Photon {
 
     this.dr = dr; // radial velocity
     this.dphi = dphi; // angular velocity in azimuthal direction
+
+    this.E = E;
+    this.L = L;
 
     this.isDone = false;
   }

@@ -4,40 +4,31 @@ import { Photon } from './objects/photon';
 import { config } from './config';
 
 function createPhoton(rs, i, N) {
+  const x0 = 3 * rs; // Fixed x position, far from black hole
+  const ySpread = 10 * rs;
+  const y0 = -ySpread / 2 + (ySpread * i) / (N - 1); // Vary y position
 
-  const angle = (2 * Math.PI * i) / N; // Direction angle
+  const r0 = Math.hypot(x0, y0);
+  const phi0 = Math.atan2(y0, x0);
 
-  const r0 = 10 * rs; // Initial radial position far from the black hole
-  const phi0 = 0;
+  // Initial direction: leftwards
+  const dx = -1;
+  const dy = 0;
 
-  // Position of emitter
-  const x0 = r0 * Math.cos(phi0);
-  const y0 = r0 * Math.sin(phi0);
+  // Impact parameter for left-moving photons
+  const b = y0;
+  const E = 1;
+  const L = b * E;
 
-  // Direction vector (unit)
-  const dx = Math.cos(angle);
-  const dy = Math.sin(angle);
-
-  // const b = 3 * Math.sqrt(3) / 2 * rs; // impact parameter, b = L/E
-  // Impact parameter b = r0 * sin(angle)
-  const b = r0 * Math.abs(Math.sin(angle)); // Approximation for flat-space direction
-
-  const E = 1; // arbitrary energy scale
-  const L = b * E; // angular momentum from impact parameter
-
-  // Compute dr/dλ using null Schwarzschild geodesic equation condition
   const term1 = E * E;
   const term2 = (1 - rs / r0) * (L * L) / (r0 * r0);
   if (term1 < term2) {
     alert('Invalid photon initial conditions.');
   }
-  const dr = Math.sqrt(term1 - term2); // geodesic null condition for photon (ds^2 = 0)
-  // Angular velocity dφ/dλ
+  const dr = -Math.sqrt(term1 - term2);
   const dphi = L / (r0 * r0);
 
-  console.log(`Creating photon at (x0=${x0}, y0=${y0}) with dr=${dr}, dphi=${dphi}`);
-
-  return new Photon(new THREE.Vector3(x0, y0, 0), dr * dx, dphi * dy);
+  return new Photon(new THREE.Vector3(x0, y0, 0), dr, dphi, E, L);
 }
 
 const scene = new THREE.Scene();
@@ -112,12 +103,19 @@ function animate(time) {
 }
 
 
-function computeGeodesic(state, c, rs) { // compute Schwarzschild geodesic equation for 2D space with simplified assumptions (skipped time component)
+function computeGeodesic(state, rs, E) { // compute Schwarzschild geodesic equation for 2D space with simplified assumptions (skipped time component)
   const r = state[0];
   const dr = state[2];
   const dphi = state[3];
 
-  const r_acc = (-c * c * rs) / (2 * r * r) + r * dphi * dphi; // approximation of 'r' acceleration
+  const f = 1 - rs / r;
+  const dt_dlambda = E / f;
+
+  // const r_acc = (-c * c * rs) / (2 * r * r) + r * dphi * dphi; // approximation of 'r' acceleration
+  const r_acc =
+    -(rs / (2 * r * r)) * f * (dt_dlambda * dt_dlambda)
+    + (rs / (2 * r * r * f)) * (dr * dr)
+    + (r - rs) * (dphi * dphi);
   const phi_acc = -(2 / r) * dr * dphi; // 'phi' acceleration
 
   return [dr, dphi, r_acc, phi_acc];
@@ -140,28 +138,21 @@ function rk4Step(photon, stepSize) {
   const dr = photon.dr;
   const dphi = photon.dphi;
 
-  // console.log(x, y, r, phi, dr, dphi);
-
   if (r < rs) {
     console.log('Photon has crossed the event horizon and is absorbed by the black hole.');
-    photon.isFinished = true;
+    photon.isDone = true;
     return;
   }
 
   let state = [r, phi, dr, dphi];
 
-  const k1 = computeGeodesic(state, c, rs);
-  // state[0] = state[0] + k1[0] * stepSize;
-  // state[1] = state[1] + k1[1] * stepSize;
-  // state[2] = state[2] + k1[2];
-  // state[3] = state[3] + k1[3];
-  // const newState = state;
+  const k1 = computeGeodesic(state, c, rs, photon.E);
   const state2 = state.map((v, i) => v + k1[i] * stepSize / 2);
-  const k2 = computeGeodesic(state2, c, rs);
+  const k2 = computeGeodesic(state2, c, rs, photon.E);
   const state3 = state.map((v, i) => v + k2[i] * stepSize / 2);
-  const k3 = computeGeodesic(state3, c, rs);
+  const k3 = computeGeodesic(state3, c, rs, photon.E);
   const state4 = state.map((v, i) => v + k3[i] * stepSize);
-  const k4 = computeGeodesic(state4, c, rs);
+  const k4 = computeGeodesic(state4, c, rs, photon.E);
 
   const newState = state.map(
     (v, i) => v + (stepSize / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
