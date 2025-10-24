@@ -14,8 +14,8 @@ export class Photon {
     this.dr = dr; // radial velocity
     this.dphi = dphi; // angular velocity in azimuthal direction
 
-    this.E = E;
-    this.L = L;
+    this.E = E; // constant of motion: energy
+    this.L = L; // constant of motion: angular momentum
 
     this.isDone = false;
   }
