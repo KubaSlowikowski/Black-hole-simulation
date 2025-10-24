@@ -15,20 +15,25 @@ function createPhoton(rs, i, N) {
   const dx = -1;
   const dy = 0;
 
-  // Impact parameter for left-moving photons
-  const b = y0;
+  // Convert to polar velocities
+  const dphi0 = (-dx * Math.sin(phi0) + dy * Math.cos(phi0)) / r0;
+
+  // Conserved quantities
   const E = 1;
-  const L = b * E;
+  const L = r0 * r0 * dphi0;
 
-  const term1 = E * E;
-  const term2 = (1 - rs / r0) * (L * L) / (r0 * r0);
-  if (term1 < term2) {
-    alert('Invalid photon initial conditions.');
-  }
-  const dr = -Math.sqrt(term1 - term2);
-  const dphi = L / (r0 * r0);
+  // Schwarzschild factor
+  const f = 1 - rs / r0;
 
-  return new Photon(new THREE.Vector3(x0, y0, 0), dr, dphi, E, L);
+  // Null geodesic constraint: 0 = -f (dt/dλ)^2 + f^{-1} (dr/dλ)^2 + r^2 (dφ/dλ)^2
+  // dt/dλ = E / f
+  // Solve for dr0:
+  const dr0_sign = dx * Math.cos(phi0) + dy * Math.sin(phi0) >= 0 ? 1 : -1;
+  const dr0 = dr0_sign * Math.sqrt(
+    f * (E * E) - f * (r0 * r0 * dphi0 * dphi0)
+  );
+
+  return new Photon(new THREE.Vector3(x0, y0, 0), dr0, dphi0, E, L);
 }
 
 const scene = new THREE.Scene();
