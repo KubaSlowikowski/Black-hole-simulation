@@ -3,36 +3,41 @@ import { BlackHole } from './objects/blackHole';
 import { Photon } from './objects/photon';
 import { config } from './config';
 
-function createPhoton(rs) {
-  const r0 = 10 * rs; // Initial radial position far from the black hole
-  const phi0 = 0; // Start at 90 degrees
+function createPhoton(rs, i, N) {
 
-  const b = 3 * Math.sqrt(3) / 2 * rs; // impact parameter, b = L/E
+  const angle = (2 * Math.PI * i) / N; // Direction angle
+
+  const r0 = 10 * rs; // Initial radial position far from the black hole
+  const phi0 = 0;
+
+  // Position of emitter
+  const x0 = r0 * Math.cos(phi0);
+  const y0 = r0 * Math.sin(phi0);
+
+  // Direction vector (unit)
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+
+  // const b = 3 * Math.sqrt(3) / 2 * rs; // impact parameter, b = L/E
+  // Impact parameter b = r0 * sin(angle)
+  const b = r0 * Math.abs(Math.sin(angle)); // Approximation for flat-space direction
 
   const E = 1; // arbitrary energy scale
   const L = b * E; // angular momentum from impact parameter
 
-  // Compute dr/dλ using null condition
+  // Compute dr/dλ using null Schwarzschild geodesic equation condition
   const term1 = E * E;
   const term2 = (1 - rs / r0) * (L * L) / (r0 * r0);
-
   if (term1 < term2) {
     alert('Invalid photon initial conditions.');
   }
-
-  // const dr = 0;
   const dr = Math.sqrt(term1 - term2); // geodesic null condition for photon (ds^2 = 0)
-
   // Angular velocity dφ/dλ
   const dphi = L / (r0 * r0);
 
-  // Use phi0 to set initial position
-  const x0 = r0 * Math.cos(phi0);
-  const y0 = r0 * Math.sin(phi0);
-
   console.log(`Creating photon at (x0=${x0}, y0=${y0}) with dr=${dr}, dphi=${dphi}`);
 
-  return new Photon(new THREE.Vector3(r0, 0, 0), dr, dphi);
+  return new Photon(new THREE.Vector3(x0, y0, 0), dr * dx, dphi * dy);
 }
 
 const scene = new THREE.Scene();
@@ -59,16 +64,12 @@ scene.add(gridHelper);
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 blackHole.render(scene);
 
-const NUMBER_OF_PHOTONS = 1;
-const photons = [
-  createPhoton(blackHole.rs)
-  // new Photon(new THREE.Vector3(-100, 5, 0), new THREE.Vector3(1, 0, 0))
-];
-// for (let i = 0; i < NUMBER_OF_PHOTONS; i++) {
-//   const photon = new Photon(new THREE.Vector3(-10, 2.5 * i + 2.5, 0), new THREE.Vector3(1, 0, 0));
-//
-//   photons.push(photon);
-// }
+const NUMBER_OF_PHOTONS = 100;
+const photons = [];
+for (let i = 0; i < NUMBER_OF_PHOTONS; i++) {
+  const photon = createPhoton(blackHole.rs, i, NUMBER_OF_PHOTONS);
+  photons.push(photon);
+}
 
 photons.forEach(p => p.render(scene));
 photons.forEach(photon => {
