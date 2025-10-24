@@ -44,6 +44,15 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+const gridSize = 100;
+const gridDivisions = 100;
+const colorCenterLine = 0xcc0000; // Red for the center line
+const colorGrid = 0x333333; // Green for the grid lines
+const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, colorCenterLine, colorGrid);
+gridHelper.rotation.x = Math.PI / 2;
+scene.add(gridHelper);
+
+
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 blackHole.render(scene);
 
