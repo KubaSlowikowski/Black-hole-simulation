@@ -5,5 +5,11 @@ export const config = {
   LIGHT_SPEED: 1,
   // GRAVITATIONAL_CONSTANT: 6.67430e-11
   GRAVITATIONAL_CONSTANT: 1,
-  PHOTON_STEP_SIZE: 1
+  PHOTON_STEP_SIZE: 0.5,
+
+  CAMERA: {
+    x: 0,
+    y: 0,
+    z: 50
+  }
 };

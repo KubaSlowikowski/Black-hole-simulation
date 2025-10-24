@@ -11,8 +11,8 @@ export class Photon {
 
     this.line = [];
 
-    this.dr = dr;
-    this.dphi = dphi;
+    this.dr = dr; // radial velocity
+    this.dphi = dphi; // angular velocity in azimuthal direction
 
     this.isDone = false;
   }

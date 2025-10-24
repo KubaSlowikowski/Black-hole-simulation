@@ -3,25 +3,28 @@ import { BlackHole } from './objects/blackHole';
 import { Photon } from './objects/photon';
 import { config } from './config';
 
-function createPhoton(rs, c) {
-  const r0 = rs * 25; // Initial radial position far from the black hole
-  const phi0 = 0;
+function createPhoton(rs) {
+  const r0 = 10 * rs; // Initial radial position far from the black hole
+  const phi0 = 0; // Start at 90 degrees
 
-  // Choose impact parameter b (e.g., b = r0 for grazing trajectory)
-  const b_max = r0 / Math.sqrt(1 - rs / r0);
-  const b = b_max * 0.1;
+  const b = 3 * Math.sqrt(3) / 2 * rs; // impact parameter, b = L/E
 
-// Set dphi/dλ = c * b / r0^2
-  const dphi = c * b / (r0 * r0);
+  const E = 1; // arbitrary energy scale
+  const L = b * E; // angular momentum from impact parameter
 
-// Solve for dr/dλ using the null constraint:
-  const sqrtArg = (1 - rs / r0) * c * c - (r0 * r0) * (dphi * dphi);
+  // Compute dr/dλ using null condition
+  const term1 = E * E;
+  const term2 = (1 - rs / r0) * (L * L) / (r0 * r0);
 
-  if (sqrtArg < 0) {
-    throw new Error('Invalid initial conditions: sqrt argument is negative');
+  if (term1 < term2) {
+    alert('Invalid photon initial conditions.');
   }
 
-  const dr = -Math.sqrt(sqrtArg) / (1 - rs / r0);
+  // const dr = 0;
+  const dr = Math.sqrt(term1 - term2); // geodesic null condition for photon (ds^2 = 0)
+
+  // Angular velocity dφ/dλ
+  const dphi = L / (r0 * r0);
 
   // Use phi0 to set initial position
   const x0 = r0 * Math.cos(phi0);
@@ -29,13 +32,13 @@ function createPhoton(rs, c) {
 
   console.log(`Creating photon at (x0=${x0}, y0=${y0}) with dr=${dr}, dphi=${dphi}`);
 
-  return new Photon(new THREE.Vector3(-x0, y0, 0), dr, dphi);
+  return new Photon(new THREE.Vector3(r0, 0, 0), dr, dphi);
 }
 
 const scene = new THREE.Scene();
 addAxesHelper();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
-camera.position.set(0, 0, 75);
+camera.position.set(config.CAMERA.x, config.CAMERA.y, config.CAMERA.z);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({
@@ -58,7 +61,7 @@ blackHole.render(scene);
 
 const NUMBER_OF_PHOTONS = 1;
 const photons = [
-  createPhoton(blackHole.rs, config.LIGHT_SPEED)
+  createPhoton(blackHole.rs)
   // new Photon(new THREE.Vector3(-100, 5, 0), new THREE.Vector3(1, 0, 0))
 ];
 // for (let i = 0; i < NUMBER_OF_PHOTONS; i++) {
@@ -68,10 +71,37 @@ const photons = [
 // }
 
 photons.forEach(p => p.render(scene));
+photons.forEach(photon => {
+  const c = config.LIGHT_SPEED;
+  const rs = blackHole.rs;
 
+  const x = photon.position.x;
+  const y = photon.position.y;
+
+  const r = Math.hypot(x, y);
+  const phi = Math.atan2(y, x);
+
+  const dr = photon.dr;
+  const dphi = photon.dphi;
+
+  const newR = r + dr * config.PHOTON_STEP_SIZE;
+  const newPhi = phi + dphi * config.PHOTON_STEP_SIZE;
+
+  const newX = r * Math.cos(newPhi);
+  const newY = r * Math.sin(newPhi);
+  console.log(`Photon position: x=${newX.toFixed(2)}, y=${newY.toFixed(2)}`);
+
+  photon.move(newX, newY);
+});
 renderer.setAnimationLoop(animate);
 
+let i = 0;
+
 function animate(time) {
+  // if (i++ > 150) {
+  //   console.log('Animation stopped after 150 frames');
+  //   return;
+  // }
   photons.forEach(photon => {
     if (photon.isDone) return;
     rk4Step(photon, config.PHOTON_STEP_SIZE);
@@ -81,7 +111,7 @@ function animate(time) {
 }
 
 
-function computeGeodesic(state, c, rs) {
+function computeGeodesic(state, c, rs) { // compute Schwarzschild geodesic equation for 2D space with simplified assumptions (skipped time component)
   const r = state[0];
   const dr = state[2];
   const dphi = state[3];
@@ -102,22 +132,29 @@ function rk4Step(photon, stepSize) {
 
   const x = photon.position.x;
   const y = photon.position.y;
+
   const r = Math.hypot(x, y);
   const phi = Math.atan2(y, x);
+
   const dr = photon.dr;
   const dphi = photon.dphi;
 
   // console.log(x, y, r, phi, dr, dphi);
 
-  if (r <= rs) {
+  if (r < rs) {
     console.log('Photon has crossed the event horizon and is absorbed by the black hole.');
-    photon.isDone = true;
+    photon.isFinished = true;
     return;
   }
 
   let state = [r, phi, dr, dphi];
 
   const k1 = computeGeodesic(state, c, rs);
+  // state[0] = state[0] + k1[0] * stepSize;
+  // state[1] = state[1] + k1[1] * stepSize;
+  // state[2] = state[2] + k1[2];
+  // state[3] = state[3] + k1[3];
+  // const newState = state;
   const state2 = state.map((v, i) => v + k1[i] * stepSize / 2);
   const k2 = computeGeodesic(state2, c, rs);
   const state3 = state.map((v, i) => v + k2[i] * stepSize / 2);
