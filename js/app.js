@@ -32,7 +32,7 @@ function createPhoton(rs, i, N) {
   // Solve for dr0:
   const dr0_sign = dx * Math.cos(phi0) + dy * Math.sin(phi0) >= 0 ? 1 : -1;
   const dr0 = dr0_sign * Math.sqrt(
-    f * (E * E) - f * (r0 * r0 * dphi0 * dphi0)
+    (E * E) - f * (r0 * r0 * dphi0 * dphi0)
   );
   if (isNaN(dr0)) {
     console.error(`Invalid initial conditions for photon at index ${i}: dr0 is NaN`);
@@ -75,13 +75,7 @@ for (let i = 1; i <= NUMBER_OF_PHOTONS; i++) {
 photons.forEach(p => p.render(scene));
 renderer.setAnimationLoop(animate);
 
-let i = 0;
-
 function animate(time) {
-  // if (i++ > 150) {
-  //   console.log('Animation stopped after 150 frames');
-  //   return;
-  // }
   photons.forEach(photon => {
     if (photon.isDone) return;
     rk4Step(photon, config.PHOTON_STEP_SIZE);
