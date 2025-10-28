@@ -32,6 +32,11 @@ export class Photon {
   }
 
   move(x, y, z) {
+    if (isNaN(x) || isNaN(y) || isNaN(z)) {
+      this.isDone = true;
+      console.log('Photon position is NaN, stopping simulation for that photon.');
+      return;
+    }
     this.position.set(x, y, z);
     this.line.push(this.position.clone());
 

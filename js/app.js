@@ -19,10 +19,12 @@ function createPhoton(rs, i, N) {
   const theta0 = Math.acos(z0 / r0);
   const phi0 = Math.atan2(y0, x0);
 
-  // Initial direction vector: leftwards
-  const dx = -1;
-  const dy = -0.1;
-  const dz = 0.1;
+  // Initial direction vector (normalize!)
+  let dx = -1, dy = -0.1, dz = 0.1;
+  const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  dx /= mag;
+  dy /= mag;
+  dz /= mag;
 
   // Convert Cartesian Direction to 3D Polar Velocities
   const dphi0 = (-dx * Math.sin(phi0) + dy * Math.cos(phi0) + 0 * dz) / (r0 * Math.sin(theta0)); // angular velocity in azimuthal direction
@@ -112,7 +114,7 @@ function computeGeodesic(state, rs, E, L) {
 
   const sinTheta = Math.sin(theta);
   const cosTheta = Math.cos(theta);
-  const cotTheta = cosTheta / sinTheta;
+  const cotTheta = cosTheta / (sinTheta + 1e-10); // avoid division by zero
 
   // Radial acceleration
   const term1 = -(rs / (2 * r * r)) * f * dt * dt;
@@ -141,16 +143,17 @@ function rk4Step(photon, stepSize) {
   const z = photon.position.z;
 
   const r = Math.hypot(x, y, z);
+  let theta = Math.acos(z / r);
   const phi = Math.atan2(y, x);
   const theta = Math.acos(z / r);
 
-  const dr = photon.dr;
-  const dphi = photon.dphi;
-  const dtheta = photon.dtheta;
+  // Clamp theta to avoid singularities
+  const thetaEpsilon = 1e-6;
+  theta = Math.max(thetaEpsilon, Math.min(Math.PI - thetaEpsilon, theta));
 
-  const epsilon = 1e-1; // we need to add this epsilon, because when 'f' in geodesic equation goes to zero, values multiplied by 1/f goes to infinity
-  if (r <= rs + (2 * epsilon)) {
-    console.log('Photon has crossed the event horizon and is absorbed by the black hole.');
+  const eventHorizonEpsilon = 1e-1;
+  if (r <= rs + eventHorizonEpsilon) {
+    console.log('Photon has crossed the event horizon.');
     photon.isDone = true;
     return;
   }
