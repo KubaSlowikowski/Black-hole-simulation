@@ -3,18 +3,20 @@ import { BlackHole } from './objects/blackHole';
 import { Photon } from './objects/photon';
 import { config } from './config';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { sky } from './objects/backgroundSky';
 
 
 function createPhoton(rs, i, N) {
 
-  const ySpread = 10 * rs;
-  const zSpread = 10 * rs;
+  const ySpread = 25 * rs;
+  const zSpread = 25 * rs;
 
-  const x0 = 5 * rs; // Fixed x position, from the black hole
-  const y0 = -ySpread / 2 + (ySpread * i) / (N - 1); // Vary y position
-  const z0 = -zSpread / 2 + (zSpread * i) / (N - 1); // Vary y position
+  const x0 = 10 * rs;
+  // const y0 = -ySpread / 2 + (ySpread * i) / (N - 1);
+  const y0 = Math.random() * ySpread - ySpread / 2;
+  // const z0 = -zSpread / 2 + (zSpread * i) / (N - 1);
+  const z0 = Math.random() * zSpread - zSpread / 2;
 
-  // Convert to polar coordinates
   const r0 = Math.hypot(x0, y0, z0);
   const theta0 = Math.acos(z0 / r0);
   const phi0 = Math.atan2(y0, x0);
@@ -56,6 +58,7 @@ function createPhoton(rs, i, N) {
 }
 
 const scene = new THREE.Scene();
+scene.background = sky;
 addAxesHelper();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
 camera.position.set(config.CAMERA.x, config.CAMERA.y, config.CAMERA.z);
@@ -77,6 +80,7 @@ const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, colorCenterLine
 gridHelper.rotation.x = Math.PI / 2;
 scene.add(gridHelper);
 
+addBackGround();
 
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 blackHole.render(scene);
@@ -100,8 +104,7 @@ function animate(time) {
   renderer.render(scene, camera);
 }
 
-
-function computeGeodesic(state, rs, E, L) {
+function computeGeodesic(state, rs, E) {
   const r = state[0]; // radial position
   const theta = state[1]; // polar angle
   // const phi = state[2]; // azimuthal angle
@@ -133,10 +136,7 @@ function computeGeodesic(state, rs, E, L) {
 }
 
 function rk4Step(photon, stepSize) {
-  // This function would compute the next position and velocity of the photon
-  // using the Runge-Kutta 4th order method.
-
-  // stepSize is the affine parameter increment (dLambda)
+  // This function would compute the next position and velocity of the photon using the Runge-Kutta 4th order method.
   const rs = blackHole.rs;
   const x = photon.position.x;
   const y = photon.position.y;
@@ -145,7 +145,6 @@ function rk4Step(photon, stepSize) {
   const r = Math.hypot(x, y, z);
   let theta = Math.acos(z / r);
   const phi = Math.atan2(y, x);
-  const theta = Math.acos(z / r);
 
   // Clamp theta to avoid singularities
   const thetaEpsilon = 1e-6;
@@ -158,23 +157,25 @@ function rk4Step(photon, stepSize) {
     return;
   }
 
-  let state = [r, theta, phi, dr, dtheta, dphi];
+  const dr = photon.dr;
+  const dtheta = photon.dtheta;
+  const dphi = photon.dphi;
 
-  const k1 = computeGeodesic(state, rs, photon.E, photon.L);
+  const state = [r, theta, phi, dr, dtheta, dphi];
+
+  const k1 = computeGeodesic(state, rs, photon.E);
   const state2 = state.map((v, i) => v + k1[i] * stepSize / 2);
-  const k2 = computeGeodesic(state2, rs, photon.E, photon.L);
+  const k2 = computeGeodesic(state2, rs, photon.E);
   const state3 = state.map((v, i) => v + k2[i] * stepSize / 2);
-  const k3 = computeGeodesic(state3, rs, photon.E, photon.L);
+  const k3 = computeGeodesic(state3, rs, photon.E);
   const state4 = state.map((v, i) => v + k3[i] * stepSize);
-  const k4 = computeGeodesic(state4, rs, photon.E, photon.L);
+  const k4 = computeGeodesic(state4, rs, photon.E);
 
-  const newR      = r      + (stepSize / 6) * (k1[0] + 2*k2[0] + 2*k3[0] + k4[0]); // dr
-  const newTheta  = theta  + (stepSize / 6) * (k1[1] + 2*k2[1] + 2*k3[1] + k4[1]); // dtheta
-  const newPhi    = phi    + (stepSize / 6) * (k1[2] + 2*k2[2] + 2*k3[2] + k4[2]); // dphi
+  const newState = state.map((v, i) =>
+    v + (stepSize / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
+  );
 
-  const newDr     = dr     + (stepSize / 6) * (k1[3] + 2*k2[3] + 2*k3[3] + k4[3]); // r_acc
-  const newDtheta = dtheta + (stepSize / 6) * (k1[4] + 2*k2[4] + 2*k3[4] + k4[4]); // theta_acc
-  const newDphi   = dphi   + (stepSize / 6) * (k1[5] + 2*k2[5] + 2*k3[5] + k4[5]); // phi_acc
+  const [newR, newTheta, newPhi, newDr, newDtheta, newDphi] = newState;
 
   // Update photon velocities
   photon.dr = newDr;
@@ -190,8 +191,11 @@ function rk4Step(photon, stepSize) {
   photon.move(newX, newY, newZ);
 }
 
-
 function addAxesHelper() {
   const axesHelper = new THREE.AxesHelper(5);
   scene.add(axesHelper);
+}
+
+function addBackGround() {
+
 }
