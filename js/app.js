@@ -104,8 +104,8 @@ function computeGeodesic(state, rs, E, L) {
   const theta = state[1]; // polar angle
   // const phi = state[2]; // azimuthal angle
   const dr = state[3]; // radial velocity
-  const dphi = state[4]; // angular velocity
-  const dtheta = state[5]; // polar angular velocity
+  const dtheta = state[4]; // polar angular velocity
+  const dphi = state[5]; // angular velocity
 
   const f = 1 - rs / r; // Schwarzschild Factor
   const dt = E / f; // dt/dλ from conserved energy (E=f(r)c^2 dt/dλ, with c=1)
