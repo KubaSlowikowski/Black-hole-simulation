@@ -9,7 +9,7 @@ export const config = {
 
   CAMERA: {
     x: 0,
-    y: 0,
-    z: 20
+    y: 80,
+    z: -10
   }
 };

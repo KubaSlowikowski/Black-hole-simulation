@@ -5,14 +5,15 @@ export const LIGHT_SPEED = 0.01;
 
 export class Photon {
 
-  constructor(initialPosition, dr, dphi, E, L) {
-    this.position = initialPosition.clone();
+  constructor(initialPosition, dr, dphi, dtheta, E, L) {
+    this.position = initialPosition;
     this.obj = null;
 
     this.line = [];
 
     this.dr = dr; // radial velocity
     this.dphi = dphi; // angular velocity in azimuthal direction
+    this.dtheta = dtheta; // angular velocity in polar direction
 
     this.E = E; // constant of motion: energy
     this.L = L; // constant of motion: angular momentum
@@ -30,22 +31,12 @@ export class Photon {
     scene.add(line);
   }
 
-  move(x, y) {
-    this.position.set(x, y, 0);
+  move(x, y, z) {
+    this.position.set(x, y, z);
     this.line.push(this.position.clone());
 
     const newGeometry = new THREE.BufferGeometry().setFromPoints(this.line);
     this.obj.geometry.dispose();
     this.obj.geometry = newGeometry;
   }
-
-  // updatePosition() {
-  //   const deltaPosition = this.direction.clone().multiplyScalar(this.speed);
-  //   this.position.add(deltaPosition);
-  //   this.line.push(this.position.clone());
-  //
-  //   const newGeometry = new THREE.BufferGeometry().setFromPoints(this.line);
-  //   this.obj.geometry.dispose();
-  //   this.obj.geometry = newGeometry;
-  // }
 }
