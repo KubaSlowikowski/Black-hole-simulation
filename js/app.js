@@ -72,16 +72,6 @@ document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.update();
 
-const gridSize = 100;
-const gridDivisions = 100;
-const colorCenterLine = 0xcc0000; // Red for the center line
-const colorGrid = 0x333333; // Green for the grid lines
-const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, colorCenterLine, colorGrid);
-gridHelper.rotation.x = Math.PI / 2;
-scene.add(gridHelper);
-
-addBackGround();
-
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 blackHole.render(scene);
 
@@ -194,8 +184,4 @@ function rk4Step(photon, stepSize) {
 function addAxesHelper() {
   const axesHelper = new THREE.AxesHelper(5);
   scene.add(axesHelper);
-}
-
-function addBackGround() {
-
 }
