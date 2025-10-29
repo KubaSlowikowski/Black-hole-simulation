@@ -17,7 +17,9 @@ export class BlackHole {
 
   render(scene) {
     const geometry = new THREE.SphereGeometry(this.rs);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const material = new THREE.MeshBasicMaterial({
+      map: new THREE.TextureLoader().load("../../public/UV_grid.png"),
+    });
     const sphere = new THREE.Mesh(geometry, material);
     scene.add(sphere);
 
