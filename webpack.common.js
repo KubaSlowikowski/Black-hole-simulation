@@ -11,11 +11,20 @@ module.exports = {
     clean: true,
     filename: './js/app.js',
   },
+  module: {
+    rules: [
+      {
+        test: /\.(glsl|vs|fs)$/,
+        loader: 'webpack-glsl-loader'
+      }
+    ]
+  },
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
         { from: 'public', to: '' } // copies everything from 'public' to output root
       ]
     })
-  ]
+  ],
+
 };
