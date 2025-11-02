@@ -95,6 +95,35 @@ float[6] geodesic(float[6] state, float E)
     return float[6](dr, dtheta, dphi, r_acc, theta_acc, phi_acc);
 }
 
+// RK4 integration step for geodesic equations
+float[6] rk4Step(float[6] state, float E, float stepSize) {
+    float[6] k1 = geodesic(state, E);
+
+    float[6] state2;
+    for (int i = 0; i < 6; i++) {
+        state2[i] = state[i] + k1[i] * stepSize * 0.5;
+    }
+    float[6] k2 = geodesic(state2, E);
+
+    float[6] state3;
+    for (int i = 0; i < 6; i++) {
+        state3[i] = state[i] + k2[i] * stepSize * 0.5;
+    }
+    float[6] k3 = geodesic(state3, E);
+
+    float[6] state4;
+    for (int i = 0; i < 6; i++) {
+        state4[i] = state[i] + k3[i] * stepSize;
+    }
+    float[6] k4 = geodesic(state4, E);
+
+    float[6] newState;
+    for (int i = 0; i < 6; i++) {
+        newState[i] = state[i] + (stepSize / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]);
+    }
+    return newState;
+}
+
 float rayTrace(Photon photon)
 {
     float thetaEpsilon = 1e-6;
@@ -127,33 +156,25 @@ float rayTrace(Photon photon)
 
         float[] state = float[6](r, theta, phi, dr, dtheta, dphi);
 
-        state = geodesic(state, photon.E);
+        // RK4 integration step
+        float[6] newState = rk4Step(state, photon.E, u_stepSize);
 
-        float r_acc = state[3];
-        float theta_acc = state[4];
-        float phi_acc = state[5];
-
-        // Euler integration step
-        dr += r_acc * u_stepSize;
-        dtheta += theta_acc * u_stepSize;
-        dphi += phi_acc * u_stepSize;
-
-        r += dr * u_stepSize;
-        theta += dtheta * u_stepSize;
-        phi += dphi * u_stepSize;
+        r = newState[0];
+        theta = newState[1];
+        phi = newState[2];
+        dr = newState[3];
+        dtheta = newState[4];
+        dphi = newState[5];
 
         photon.dr = dr;
         photon.dtheta = dtheta;
         photon.dphi = dphi;
-        // photon.t += stepSize * dt; photon's time coordinate
 
-        // Transform back to Cartesian coordinates
         float newX = r * sin(theta) * cos(phi);
         float newY = r * sin(theta) * sin(phi);
         float newZ = r * cos(theta);
 
-        vec3 newPosition = vec3(newX, newY, newZ);
-        photon.position = newPosition;
+        photon.position = vec3(newX, newY, newZ);
 
         cd = scene(photon.position); // get scene distance
 
