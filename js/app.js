@@ -1,7 +1,8 @@
+
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import vertexShader from './vertexShader.glsl';
-import fragmentShader from './fragmentShader.glsl';
+import vertexShader from './vertexShader.glsl'
+import fragmentShader from './fragmentShader.glsl'
 
 // Create a scene
 const scene = new THREE.Scene();
@@ -16,8 +17,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Set background color
-const backgroundColor = new THREE.Color(0x3399ee);
-renderer.setClearColor(backgroundColor, 1);
+const image = '../public/galaxy.jpg';
+const backgroundTexture =new THREE.CubeTextureLoader().load([image, image, image, image, image, image]);
 
 // Add orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -30,27 +31,15 @@ const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(1, 1, 1);
 scene.add(light);
 
-// Create a ray marching plane
-const geometry = new THREE.PlaneGeometry();
-const material = new THREE.ShaderMaterial();
-const rayMarchPlane = new THREE.Mesh(geometry, material);
-
-// Get the wdith and height of the near plane
-const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
-const nearPlaneHeight = nearPlaneWidth / camera.aspect;
-
-// Scale the ray marching plane
-rayMarchPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
-
-// Add uniforms
+// Define uniforms
 const uniforms = {
-  u_eps: { value: 0.001 }, // smallest distance to consider a hit
-  u_maxDis: { value: 1000 }, // maximum distance a ray can travel
-  u_maxSteps: { value: 100 }, // maximum number of steps
+  u_eps: { value: 0.001 },
+  u_maxDis: { value: 1000 },
+  u_maxSteps: { value: 100 },
 
-  u_clearColor: { value: backgroundColor }, // color to use when nothing is hit
+  u_backgroundCube: { value: backgroundTexture },
 
-  u_camPos: { value: camera.position }, // we use camera uniforms to calculate ray origin and direction
+  u_camPos: { value: camera.position },
   u_camToWorldMat: { value: camera.matrixWorld },
   u_camInvProjMat: { value: camera.projectionMatrixInverse },
 
@@ -62,13 +51,24 @@ const uniforms = {
   u_ambientIntensity: { value: 0.15 },
   u_shininess: { value: 16 },
 
-  u_time: { value: 0 }
+  u_time: { value: 0 },
 };
-material.uniforms = uniforms;
 
-// define vertex and fragment shaders and add them to the material
-material.vertexShader = vertexShader;
-material.fragmentShader = fragmentShader;
+// Create a ray marching plane
+const geometry = new THREE.PlaneGeometry();
+const material = new THREE.ShaderMaterial({
+  vertexShader: vertexShader,
+  fragmentShader: fragmentShader,
+  uniforms: uniforms
+});
+const rayMarchPlane = new THREE.Mesh(geometry, material);
+
+// Get the wdith and height of the near plane
+const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
+const nearPlaneHeight = nearPlaneWidth / camera.aspect;
+
+// Scale the ray marching plane
+rayMarchPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
 // Add plane to scene
 scene.add(rayMarchPlane);
@@ -93,7 +93,7 @@ const animate = () => {
   uniforms.u_time.value = (Date.now() - time) / 1000;
 
   controls.update();
-};
+}
 animate();
 
 // Handle window resize

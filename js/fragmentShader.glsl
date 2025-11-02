@@ -4,7 +4,7 @@ precision mediump float;
 in vec2 vUv;
 
 // From CPU
-uniform vec3 u_clearColor;
+uniform samplerCube u_backgroundCube;
 
 uniform float u_eps;
 uniform float u_maxDis;
@@ -39,14 +39,14 @@ float scene(vec3 p) {
     // return the minimum distance between the two spheres smoothed by 0.5
     return smin(sphere1Dis, sphere2Dis, 0.5);
 }
-float rayMarch(vec3 rayOrigin, vec3 rayDirection)
+float rayMarch(vec3 ro, vec3 rd)
 {
-    float d = 0.; // total distance travelled
+    float d = 0.0; // total distance travelled
     float cd; // current scene distance
     vec3 p; // current position of ray
 
     for (int i = 0; i < u_maxSteps; ++i) { // main loop
-                                           p = rayOrigin + d * rayDirection; // calculate new position
+                                           p = ro + d * rd; // calculate new position
                                            cd = scene(p); // get scene distance
 
                                            // if we have hit anything or our distance is too big, break loop
@@ -85,33 +85,33 @@ vec3 normal(vec3 p) // from https://iquilezles.org/articles/normalsSDF/
 
 void main() {
     // Get UV from vertex shader
-    vec2 uv = vUv.xy; // on which pixel we are
+    vec2 uv = vUv.xy;
 
     // Get ray origin and direction from camera uniforms
-    vec3 rayOrigin = u_camPos;
-    vec3 rayDirection = (u_camInvProjMat * vec4(uv * 2. - 1., 0, 1)).xyz;
-    rayDirection = (u_camToWorldMat * vec4(rayDirection, 0)).xyz;
-    rayDirection = normalize(rayDirection);
+    vec3 ro = u_camPos;
+    vec3 rd = (u_camInvProjMat * vec4(uv * 2. - 1., 0, 1)).xyz;
+    rd = (u_camToWorldMat * vec4(rd, 0)).xyz;
+    rd = normalize(rd);
 
     // Ray marching and find total distance travelled
-    float disTravelled = rayMarch(rayOrigin, rayDirection); // use normalized ray
+    float disTravelled = rayMarch(ro, rd); // use normalized ray
 
     // Find the hit position
-    vec3 hp = rayOrigin + disTravelled * rayDirection;
+    vec3 hp = ro + disTravelled * rd;
 
     // Get normal of hit point
     vec3 n = normal(hp);
 
     if (disTravelled >= u_maxDis) { // if ray doesn't hit anything
-                                    gl_FragColor = vec4(u_clearColor, 1);
+        gl_FragColor = texture(u_backgroundCube, rd);
     } else { // if ray hits something
-             // Calculate Diffuse model
-             float dotNL = dot(n, u_lightDir);
-             float diff = max(dotNL, 0.0) * u_diffIntensity;
-             float spec = pow(diff, u_shininess) * u_specIntensity;
-             float ambient = u_ambientIntensity;
+         // Calculate Diffuse model
+         float dotNL = dot(n, u_lightDir);
+         float diff = max(dotNL, 0.0) * u_diffIntensity;
+         float spec = pow(diff, u_shininess) * u_specIntensity;
+         float ambient = u_ambientIntensity;
 
-             vec3 color = u_lightColor * (sceneCol(hp) * (spec + ambient + diff));
-             gl_FragColor = vec4(color, 1); // color output
+         vec3 color = u_lightColor * (sceneCol(hp) * (spec + ambient + diff));
+         gl_FragColor = vec4(color, 1); // color output
     }
 }
