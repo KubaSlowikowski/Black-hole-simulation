@@ -20,21 +20,20 @@ uniform mat4 u_camInvProjMat;
 
 uniform float u_time;
 
-float smin(float a, float b, float k) {
-    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
-    return mix(b, a, h) - k * h * (1.0 - h);
-}
-
 float blackHoleDist(vec3 p) {
     return distance(p, u_blackHolePosition) - u_schwarzschildRadius;
 }
 
 float accretionDiscDist(vec3 p) {
-    float radius = 6.5;
+    float outerRadius = 6.5;
+    float innerRadius = 3.0;
     float thickness = 0.02;
-    float radialDist = length(p.xz) - radius;
+
+    float radialDistOuter = length(p.xz) - outerRadius;
+    float radialDistInner = innerRadius - length(p.xz);
+
     float verticalDist = abs(p.y) - thickness;
-    return max(radialDist, verticalDist);
+    return max(max(radialDistOuter, verticalDist), radialDistInner);
 }
 
 float scene(vec3 p) {
@@ -47,6 +46,7 @@ float scene(vec3 p) {
     // return the minimum distance between the two spheres
     return min(blackHoleDist, accretionDiscColor);
 }
+
 float rayTrace(vec3 ro, vec3 rd)
 {
     float d = 0.0; // total distance travelled
@@ -73,7 +73,7 @@ vec3 sceneCol(vec3 p)
     float sphere2Dis = accretionDiscDist(p);
 
     vec3 color1 = vec3(1, 0, 0); // Red
-    vec3 blackHoleColor = vec3(0.3, 0.3, 0.3);
+    vec3 blackHoleColor = vec3(0.2, 0.2, 0.2);
 
     // Return color based on which object is closer
     if (blackHoleDist < sphere2Dis) {
@@ -114,9 +114,9 @@ void main() {
     vec3 normal = normal(hitPoint);
 
     if (distanceTravelled >= u_maxDis) { // if ray doesn't hit anything
-        gl_FragColor = texture(u_backgroundCube, rayDirection);
+                                         gl_FragColor = texture(u_backgroundCube, rayDirection);
     } else { // if ray hits something
-         vec3 color = sceneCol(hitPoint);
-         gl_FragColor = vec4(color, 1); // color output
+             vec3 color = sceneCol(hitPoint);
+             gl_FragColor = vec4(color, 1); // color output
     }
 }
