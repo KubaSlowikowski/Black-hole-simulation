@@ -36,8 +36,8 @@ float blackHoleDist(vec3 p) {
 }
 
 float accretionDiscDist(vec3 p) {
-    float outerRadius = 8.0;
-    float innerRadius = 3.5;
+    float outerRadius = 5.0 * u_schwarzschildRadius;
+    float innerRadius = 2.0 * u_schwarzschildRadius;
     float thickness = 0.02;
 
     float radialDistOuter = length(p.xz) - outerRadius;
@@ -77,7 +77,7 @@ float[6] geodesic(float[6] state, float E)
 
     float sinTheta = sin(theta);
     float cosTheta = cos(theta);
-    float cotTheta = cosTheta / sinTheta + 1e-10; // avoid division by zero
+    float cotTheta = cosTheta / sinTheta + 1e-7; // avoid division by zero
 
     // Radial acceleration
     float term1 = -(rs / (2.0 * r * r)) * f * dt * dt;
@@ -96,7 +96,8 @@ float[6] geodesic(float[6] state, float E)
 }
 
 // RK4 integration step for geodesic equations
-float[6] rk4Step(float[6] state, float E, float stepSize) {
+float[6] rk4Step(float[6] state, float E, float stepSize)
+{
     float[6] k1 = geodesic(state, E);
 
     float[6] state2;
@@ -126,7 +127,7 @@ float[6] rk4Step(float[6] state, float E, float stepSize) {
 
 float rayTrace(Photon photon)
 {
-    float thetaEpsilon = 1e-6;
+    float thetaEpsilon = 1e-4;
 
     float d = 0.0; // total distance travelled
     float cd; // current scene distance
@@ -264,7 +265,24 @@ Photon initializePhoton(vec3 rayOrigin, vec3 rayDirection) {
     return photon;
 }
 
-void main() {
+vec3 sphericalToCartesianVelocity(float r, float theta, float phi, float dr, float dtheta, float dphi)
+{
+    float dx = dr * sin(theta) * cos(phi)
+    + r * dtheta * cos(theta) * cos(phi)
+    - r * dphi * sin(theta) * sin(phi);
+
+    float dy = dr * sin(theta) * sin(phi)
+    + r * dtheta * cos(theta) * sin(phi)
+    + r * dphi * sin(theta) * cos(phi);
+
+    float dz = dr * cos(theta)
+    - r * dtheta * sin(theta);
+
+    return vec3(dx, dy, dz);
+}
+
+void main()
+{
     // Get UV from vertex shader
     vec2 uv = vUv.xy;
 
@@ -279,16 +297,29 @@ void main() {
     // Ray tracing and find total distance travelled
     float distanceTravelled = rayTrace(photon); // use normalized ray
 
+    float x = photon.position.x;
+    float y = photon.position.y;
+    float z = photon.position.z;
+    float r = hypot(x, y, z);
+    float theta = acos(z / r);
+    float phi = atan(y, x);
+
+    vec3 updatedDirection = normalize(
+        sphericalToCartesianVelocity(r, theta, phi, photon.dr, photon.dtheta, photon.dphi)
+    );
+
     // Find the hit position
-    vec3 hitPoint = rayOrigin + distanceTravelled * rayDirection;
+    vec3 hitPoint = photon.position;
 
     // Get normal of hit point
     vec3 normal = normal(hitPoint);
 
-    if (distanceTravelled >= u_maxDis) { // if ray doesn't hit anything
-                                         gl_FragColor = texture(u_backgroundCube, rayDirection);
-    } else { // if ray hits something
-             vec3 color = sceneCol(hitPoint);
-             gl_FragColor = vec4(color, 1); // color output
+    if (distanceTravelled >= u_maxDis)
+    { // if ray doesn't hit anything
+      gl_FragColor = texture(u_backgroundCube, updatedDirection);
+    } else
+    { // if ray hits something
+      vec3 color = sceneCol(hitPoint);
+      gl_FragColor = vec4(color, 1); // color output
     }
 }

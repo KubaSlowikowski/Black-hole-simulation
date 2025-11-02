@@ -8,8 +8,8 @@ export const config = {
   PHOTON_STEP_SIZE: 0.1,
 
   CAMERA: {
-    x: 0,
-    y: 1.0,
-    z: 10
+    x: 3,
+    y: 2.0,
+    z: 15
   }
 };
