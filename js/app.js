@@ -1,29 +1,39 @@
-
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import vertexShader from './vertexShader.glsl'
-import fragmentShader from './fragmentShader.glsl'
+import vertexShader from './vertexShader.glsl';
+import fragmentShader from './fragmentShader.glsl';
+import { config } from './config';
+import Stats from 'three/examples/jsm/libs/stats.module';
+import { BlackHole } from './objects/blackHole';
+
 
 // Create a scene
 const scene = new THREE.Scene();
 
 // Create a camera
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 5;
+const resolution = {
+  width: 800, // window.innerWidth
+  height: 500 // window.innerHeight
+};
+const camera = new THREE.PerspectiveCamera(75, resolution.width / resolution.height, 0.1, 1000);
+camera.position.set(config.CAMERA.x, config.CAMERA.y, config.CAMERA.z);
 
 // Create a renderer
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(resolution.width, resolution.height);
 document.body.appendChild(renderer.domElement);
+
+const stats = new Stats();
+document.body.appendChild(stats.dom);
 
 // Set background color
 const image = '../public/galaxy.jpg';
-const backgroundTexture =new THREE.CubeTextureLoader().load([image, image, image, image, image, image]);
+const backgroundTexture = new THREE.CubeTextureLoader().load([image, image, image, image, image, image]);
 
 // Add orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.maxDistance = 10;
-controls.minDistance = 2;
+controls.minDistance = 2.5;
 controls.enableDamping = true;
 
 // Add directional light
@@ -31,27 +41,32 @@ const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(1, 1, 1);
 scene.add(light);
 
+const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
+
 // Define uniforms
 const uniforms = {
-  u_eps: { value: 0.001 },
-  u_maxDis: { value: 1000 },
-  u_maxSteps: { value: 100 },
-
   u_backgroundCube: { value: backgroundTexture },
+  u_schwarzschildRadius: { value: blackHole.rs },
+  u_blackHolePosition: { value: blackHole.position },
+
+  u_eps: { value: 0.01 },
+  u_maxDis: { value: 20 },
+  u_maxSteps: { value: 1000 },
+  u_stepSize: { value: config.PHOTON_STEP_SIZE },
+
 
   u_camPos: { value: camera.position },
   u_camToWorldMat: { value: camera.matrixWorld },
   u_camInvProjMat: { value: camera.projectionMatrixInverse },
 
   u_lightDir: { value: light.position },
-  u_lightColor: { value: light.color },
 
   u_diffIntensity: { value: 0.5 },
   u_specIntensity: { value: 3 },
   u_ambientIntensity: { value: 0.15 },
   u_shininess: { value: 16 },
 
-  u_time: { value: 0 },
+  u_time: { value: 0 }
 };
 
 // Create a ray marching plane
@@ -63,7 +78,7 @@ const material = new THREE.ShaderMaterial({
 });
 const rayMarchPlane = new THREE.Mesh(geometry, material);
 
-// Get the wdith and height of the near plane
+// Get the width and height of the near plane
 const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
 const nearPlaneHeight = nearPlaneWidth / camera.aspect;
 
@@ -93,17 +108,18 @@ const animate = () => {
   uniforms.u_time.value = (Date.now() - time) / 1000;
 
   controls.update();
-}
+  stats.update();
+};
 animate();
 
 // Handle window resize
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = resolution.width / resolution.height;
   camera.updateProjectionMatrix();
 
   const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
   const nearPlaneHeight = nearPlaneWidth / camera.aspect;
   rayMarchPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
-  if (renderer) renderer.setSize(window.innerWidth, window.innerHeight);
+  if (renderer) renderer.setSize(resolution.width, resolution.height);
 });

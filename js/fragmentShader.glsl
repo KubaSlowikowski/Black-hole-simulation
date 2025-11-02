@@ -4,23 +4,19 @@ precision mediump float;
 in vec2 vUv;
 
 // From CPU
+uniform float u_schwarzschildRadius;
+uniform vec3 u_blackHolePosition;
+
 uniform samplerCube u_backgroundCube;
 
 uniform float u_eps;
 uniform float u_maxDis;
 uniform int u_maxSteps;
+uniform float u_stepSize;
 
 uniform vec3 u_camPos;
 uniform mat4 u_camToWorldMat;
 uniform mat4 u_camInvProjMat;
-
-uniform vec3 u_lightDir;
-uniform vec3 u_lightColor;
-
-uniform float u_diffIntensity;
-uniform float u_specIntensity;
-uniform float u_ambientIntensity;
-uniform float u_shininess;
 
 uniform float u_time;
 
@@ -29,17 +25,29 @@ float smin(float a, float b, float k) {
     return mix(b, a, h) - k * h * (1.0 - h);
 }
 
+float blackHoleDist(vec3 p) {
+    return distance(p, u_blackHolePosition) - u_schwarzschildRadius;
+}
+
+float accretionDiscDist(vec3 p) {
+    float radius = 6.5;
+    float thickness = 0.02;
+    float radialDist = length(p.xz) - radius;
+    float verticalDist = abs(p.y) - thickness;
+    return max(radialDist, verticalDist);
+}
+
 float scene(vec3 p) {
     // distance to sphere 1
-    float sphere1Dis = distance(p, vec3(cos(u_time), sin(u_time), 0)) - 1.;
+    float blackHoleDist = blackHoleDist(p);
 
     // distance to sphere 2
-    float sphere2Dis = distance(p, vec3(sin(u_time), cos(u_time), 0)) - 0.75;
+    float accretionDiscColor = accretionDiscDist(p);
 
-    // return the minimum distance between the two spheres smoothed by 0.5
-    return smin(sphere1Dis, sphere2Dis, 0.5);
+    // return the minimum distance between the two spheres
+    return min(blackHoleDist, accretionDiscColor);
 }
-float rayMarch(vec3 ro, vec3 rd)
+float rayTrace(vec3 ro, vec3 rd)
 {
     float d = 0.0; // total distance travelled
     float cd; // current scene distance
@@ -53,23 +61,26 @@ float rayMarch(vec3 ro, vec3 rd)
                                            if (cd < u_eps || d >= u_maxDis) break;
 
                                            // otherwise, add new scene distance to total distance
-                                           d += cd;
+                                           d += u_stepSize;
     }
 
     return d; // finally, return scene distance
 }
 
-vec3 sceneCol(vec3 p) {
-    float sphere1Dis = distance(p, vec3(cos(u_time), sin(u_time), 0)) - 1.;
-    float sphere2Dis = distance(p, vec3(sin(u_time), cos(u_time), 0)) - 0.75;
-
-    float k = 0.5; // The same parameter used in the smin function in "scene"
-    float h = clamp(0.5 + 0.5 * (sphere2Dis - sphere1Dis) / k, 0.0, 1.0);
+vec3 sceneCol(vec3 p)
+{
+    float blackHoleDist = blackHoleDist(p);
+    float sphere2Dis = accretionDiscDist(p);
 
     vec3 color1 = vec3(1, 0, 0); // Red
-    vec3 color2 = vec3(0, 0, 1); // Blue
+    vec3 blackHoleColor = vec3(0.3, 0.3, 0.3);
 
-    return mix(color1, color2, h);
+    // Return color based on which object is closer
+    if (blackHoleDist < sphere2Dis) {
+        return blackHoleColor;
+    } else {
+        return color1;
+    }
 }
 
 vec3 normal(vec3 p) // from https://iquilezles.org/articles/normalsSDF/
@@ -88,30 +99,24 @@ void main() {
     vec2 uv = vUv.xy;
 
     // Get ray origin and direction from camera uniforms
-    vec3 ro = u_camPos;
-    vec3 rd = (u_camInvProjMat * vec4(uv * 2. - 1., 0, 1)).xyz;
-    rd = (u_camToWorldMat * vec4(rd, 0)).xyz;
-    rd = normalize(rd);
+    vec3 rayOrigin = u_camPos;
+    vec3 rayDirection = (u_camInvProjMat * vec4(uv * 2. - 1., 0, 1)).xyz;
+    rayDirection = (u_camToWorldMat * vec4(rayDirection, 0)).xyz;
+    rayDirection = normalize(rayDirection);
 
     // Ray marching and find total distance travelled
-    float disTravelled = rayMarch(ro, rd); // use normalized ray
+    float distanceTravelled = rayTrace(rayOrigin, rayDirection); // use normalized ray
 
     // Find the hit position
-    vec3 hp = ro + disTravelled * rd;
+    vec3 hitPoint = rayOrigin + distanceTravelled * rayDirection;
 
     // Get normal of hit point
-    vec3 n = normal(hp);
+    vec3 normal = normal(hitPoint);
 
-    if (disTravelled >= u_maxDis) { // if ray doesn't hit anything
-        gl_FragColor = texture(u_backgroundCube, rd);
+    if (distanceTravelled >= u_maxDis) { // if ray doesn't hit anything
+        gl_FragColor = texture(u_backgroundCube, rayDirection);
     } else { // if ray hits something
-         // Calculate Diffuse model
-         float dotNL = dot(n, u_lightDir);
-         float diff = max(dotNL, 0.0) * u_diffIntensity;
-         float spec = pow(diff, u_shininess) * u_specIntensity;
-         float ambient = u_ambientIntensity;
-
-         vec3 color = u_lightColor * (sceneCol(hp) * (spec + ambient + diff));
+         vec3 color = sceneCol(hitPoint);
          gl_FragColor = vec4(color, 1); // color output
     }
 }
