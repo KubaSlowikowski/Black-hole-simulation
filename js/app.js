@@ -32,7 +32,7 @@ const backgroundTexture = new THREE.CubeTextureLoader().load([image, image, imag
 
 // Add orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.maxDistance = 10;
+controls.maxDistance = 25;
 controls.minDistance = 2.5;
 controls.enableDamping = true;
 
@@ -50,7 +50,7 @@ const uniforms = {
   u_blackHolePosition: { value: blackHole.position },
 
   u_eps: { value: 0.01 },
-  u_maxDis: { value: 20 },
+  u_maxDis: { value: 30 },
   u_maxSteps: { value: 1000 },
   u_stepSize: { value: config.PHOTON_STEP_SIZE },
 

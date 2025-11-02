@@ -1,16 +1,13 @@
 import { Photon } from './objects/photon';
 import * as THREE from 'three';
 
-export function createPhoton(rs, i, N) {
+export function createPhoton(rs, x, y, z) {
 
-  const ySpread = 25 * rs;
-  const zSpread = 25 * rs;
-
-  const x0 = 10 * rs;
+  const x0 = x;
   // const y0 = -ySpread / 2 + (ySpread * i) / (N - 1);
-  const y0 = Math.random() * ySpread - ySpread / 2;
+  const y0 = y;
   // const z0 = -zSpread / 2 + (zSpread * i) / (N - 1);
-  const z0 = Math.random() * zSpread - zSpread / 2;
+  const z0 = z;
 
   const r0 = Math.hypot(x0, y0, z0);
   const theta0 = Math.acos(z0 / r0);
@@ -46,7 +43,7 @@ export function createPhoton(rs, i, N) {
     (E * E) - (L_squared * f) / (r0 * r0)
   );
   if (isNaN(dr0)) {
-    console.error(`Invalid initial conditions for photon at index ${i}: dr0 is NaN`);
+    console.error(`Invalid initial conditions for photon: dr0 is NaN`);
   }
 
   return new Photon(new THREE.Vector3(x0, y0, z0), dr0, dphi0, dtheta0, E, Math.sqrt(L_squared));
