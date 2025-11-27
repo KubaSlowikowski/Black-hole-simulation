@@ -43,7 +43,7 @@ float blackHoleDist(vec3 p) {
 }
 
 float accretionDiscDist(vec3 p) {
-    float outerRadius = 5.0 * u_schwarzschildRadius;
+    float outerRadius = 7.0 * u_schwarzschildRadius;
     float innerRadius = 2.0 * u_schwarzschildRadius;
     float thickness = 0.02;
 
@@ -218,14 +218,14 @@ vec3 sceneCol(vec3 p)
     float blackHoleDist = blackHoleDist(p);
     float sphere2Dis = accretionDiscDist(p);
 
-    vec3 color1 = vec3(1, 0, 0); // Red
-    vec3 blackHoleColor = vec3(0.2, 0.2, 0.2);
+    vec3 accretionDiscColor = vec3(1, 0, 0); // Red
+    vec3 blackHoleColor = vec3(0.0, 0.0, 0.0);
 
     // Return color based on which object is closer
     if (blackHoleDist < sphere2Dis) {
         return blackHoleColor;
     } else {
-        return color1;
+        return accretionDiscColor;
     }
 }
 

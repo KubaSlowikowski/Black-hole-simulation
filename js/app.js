@@ -32,7 +32,7 @@ const backgroundTexture = new THREE.CubeTextureLoader().load([image, image, imag
 
 // Add orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.maxDistance = 25;
+controls.maxDistance = 200;
 controls.minDistance = 2.5;
 controls.enableDamping = true;
 
