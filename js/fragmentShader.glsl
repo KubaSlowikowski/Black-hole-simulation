@@ -1,7 +1,5 @@
 precision mediump float;
 
-#define PI 3.14159265359
-
 // From vertex shader
 in vec2 vUv;
 
@@ -30,6 +28,9 @@ struct Photon {
     float E;
     float L;
 };
+
+struct GeodesicStepState { float r, theta, phi, dr, dtheta, dphi; };
+
 
 float blackHoleDist(vec3 p) {
     return distance(p, u_blackHolePosition) - u_schwarzschildRadius;
@@ -77,7 +78,9 @@ float[6] geodesic(float[6] state, float E)
 
     float sinTheta = sin(theta);
     float cosTheta = cos(theta);
-    float cotTheta = cosTheta / sinTheta + 1e-7; // avoid division by zero
+
+    float invSinTheta = 1.0 / (sinTheta + 1e-7);
+    float cotTheta = cosTheta * invSinTheta;  // avoid division by zero
 
     // Radial acceleration
     float term1 = -(rs / (2.0 * r * r)) * f * dt * dt;
@@ -132,7 +135,9 @@ struct RayTraceResult {
 
 RayTraceResult rayTrace(Photon photon)
 {
-    float thetaEpsilon = 1e-4;
+    const float thetaEpsilon = 1e-4;
+    const float PI = 3.14159265359;
+    const float PI_minus_thetaEpsilon = PI - thetaEpsilon;
 
     float d = 0.0; // total distance travelled
     float cd; // current scene distance
@@ -149,7 +154,7 @@ RayTraceResult rayTrace(Photon photon)
         float phi = atan(y, x);
 
         // Clamp theta to avoid singularities
-        theta = max(thetaEpsilon, min(PI - thetaEpsilon, theta));
+        theta = max(thetaEpsilon, min(PI_minus_thetaEpsilon, theta));
 
         if (r <= u_schwarzschildRadius) {
             break; // Photon has crossed the event horizon // TODO
@@ -161,6 +166,7 @@ RayTraceResult rayTrace(Photon photon)
         float dphi = photon.dphi;
 
         float[] state = float[6](r, theta, phi, dr, dtheta, dphi);
+//        GeodesicStepState gs = GeodesicStepState(r, theta, phi, dr, dtheta, dphi);
 
         // RK4 integration step
         float[6] newState = rk4Step(state, photon.E, u_stepSize);
@@ -238,19 +244,19 @@ Photon initializePhoton(vec3 rayOrigin, vec3 rayDirection) {
     float dy = rayDirection.y;
     float dz = rayDirection.z;
 
+    float sinTheta0 = sin(theta0);
+    float cosTheta0 = cos(theta0);
+    float sinPhi0 = sin(phi0);
+    float cosPhi0 = cos(phi0);
+
     // Convert Cartesian Direction to 3D Polar Velocities
-    float dphi0 = (-dx * sin(phi0) + dy * cos(phi0) + 0.0 * dz) / (r0 * sin(theta0)); // angular velocity in azimuthal direction
-    float dtheta0 = (dx * cos(theta0) * cos(phi0) + dy * cos(theta0) * sin(phi0) - dz * sin(theta0)) / r0; // angular velocity in polar direction
-    float dr0_sign; // todo - simplify this to clamp(...)
-    if ((dx * sin(theta0) * cos(phi0) + dy * sin(theta0) * sin(phi0) + dz * cos(theta0)) >= 0.0) {
-        dr0_sign = 1.0;
-    } else {
-        dr0_sign = -1.0;
-    }
+    float dphi0 = (-dx * sin(phi0) + dy * cosPhi0 + 0.0 * dz) / (r0 * sinTheta0); // angular velocity in azimuthal direction
+    float dtheta0 = (dx * cosTheta0 * cosPhi0 + dy * cosTheta0 * sin(phi0) - dz * sinTheta0) / r0; // angular velocity in polar direction
+    float dr0_sign = sign(dx * sinTheta0 * cosPhi0 + dy * sinTheta0 * sin(phi0) + dz * cosTheta0);
 
     // Conserved quantities
     float E = 1.0; // conserved energy per unit mass (set to 1 arbitrarily)
-    float L_squared = pow(r0, 4.0) * ((dtheta0 * dtheta0) + (sin(theta0) * sin(theta0) * dphi0 * dphi0)); //Square of Angular Momentum in Schwarzschild Geometry for 3D space
+    float L_squared = r0 * r0 * r0 * r0 * ((dtheta0 * dtheta0) + (sinTheta0 * sinTheta0 * dphi0 * dphi0)); //Square of Angular Momentum in Schwarzschild Geometry for 3D space
 
     // Schwarzschild factor
     float f = 1.0 - u_schwarzschildRadius / r0; // gravitational redshift factor
@@ -306,7 +312,7 @@ void main()
     float x = photon.position.x;
     float y = photon.position.y;
     float z = photon.position.z;
-    float r = hypot(x, y, z);
+    float r = length(vec3(x, y, z));
     float theta = acos(z / r);
     float phi = atan(y, x);
 
