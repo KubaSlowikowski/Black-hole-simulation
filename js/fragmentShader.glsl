@@ -29,8 +29,14 @@ struct Photon {
     float L;
 };
 
-struct GeodesicStepState { float r, theta, phi, dr, dtheta, dphi; };
-
+struct GeodesicStepState {
+    float r; // radial position
+    float theta; // polar angle
+    float phi; // azimuthal angle
+    float dr; // radial velocity
+    float dtheta; // polar angular velocity
+    float dphi; // angular velocity
+};
 
 float blackHoleDist(vec3 p) {
     return distance(p, u_blackHolePosition) - u_schwarzschildRadius;
@@ -59,72 +65,79 @@ float scene(vec3 p) {
     return min(blackHoleDist, accretionDiscColor);
 }
 
-float hypot(float x, float y, float z) {
-    return sqrt(x * x + y * y + z * z);
-}
-
-float[6] geodesic(float[6] state, float E)
+GeodesicStepState geodesic(GeodesicStepState state, float E)
 {
-    float r = state[0]; // radial position
-    float theta = state[1]; // polar angle
-    // const phi = state[2]; // azimuthal angle
-    float dr = state[3]; // radial velocity
-    float dtheta = state[4]; // polar angular velocity
-    float dphi = state[5]; // angular velocity
-
-    float f = 1.0 - u_schwarzschildRadius / r;
+    float f = 1.0 - u_schwarzschildRadius / state.r;
     float dt = E / f;
     float rs = u_schwarzschildRadius;
 
-    float sinTheta = sin(theta);
-    float cosTheta = cos(theta);
+    float sinTheta = sin(state.theta);
+    float cosTheta = cos(state.theta);
 
     float invSinTheta = 1.0 / (sinTheta + 1e-7);
     float cotTheta = cosTheta * invSinTheta;  // avoid division by zero
 
     // Radial acceleration
-    float term1 = -(rs / (2.0 * r * r)) * f * dt * dt;
-    float term2 = (rs / (2.0 * r * r * f)) * dr * dr;
-    float term3 = r * f * dtheta * dtheta;
-    float term4 = r * f * sinTheta * sinTheta * dphi * dphi;
+    float term1 = -(rs / (2.0 * state.r * state.r)) * f * dt * dt;
+    float term2 = (rs / (2.0 * state.r * state.r * f)) * state.dr * state.dr;
+    float term3 = state.r * f * state.dtheta * state.dtheta;
+    float term4 = state.r * f * sinTheta * sinTheta * state.dphi * state.dphi;
     float r_acc = term1 + term2 + term3 + term4;
 
     // 'theta' acceleration
-    float theta_acc = (sinTheta * cosTheta * dphi * dphi) - (2.0 / r * dr * dtheta);
+    float theta_acc = (sinTheta * cosTheta * state.dphi * state.dphi) - (2.0 / state.r * state.dr * state.dtheta);
 
     // 'phi' acceleration
-    float phi_acc = (-2.0 * cotTheta * dtheta * dphi) - (2.0 / r) * dr * dphi;
+    float phi_acc = (-2.0 * cotTheta * state.dtheta * state.dphi) - (2.0 / state.r) * state.dr * state.dphi;
 
-    return float[6](dr, dtheta, dphi, r_acc, theta_acc, phi_acc);
+    return GeodesicStepState(state.dr, state.dtheta, state.dphi, r_acc, theta_acc, phi_acc);
 }
 
 // RK4 integration step for geodesic equations
-float[6] rk4Step(float[6] state, float E, float stepSize)
+GeodesicStepState rk4Step(GeodesicStepState state, float E, float stepSize)
 {
-    float[6] k1 = geodesic(state, E);
+    GeodesicStepState k1 = geodesic(state, E);
+    float halfStepSize = stepSize * 0.5;
 
-    float[6] state2;
-    for (int i = 0; i < 6; i++) {
-        state2[i] = state[i] + k1[i] * stepSize * 0.5;
-    }
-    float[6] k2 = geodesic(state2, E);
+    GeodesicStepState state2;
+    state2.r = state.r + k1.r * halfStepSize;
+    state2.theta = state.theta + k1.theta * halfStepSize;
+    state2.phi = state.phi + k1.phi * halfStepSize;
+    state2.dr = state.dr + k1.dr * halfStepSize;
+    state2.dtheta = state.dtheta + k1.dtheta * halfStepSize;
+    state2.dphi = state.dphi + k1.dphi * halfStepSize;
 
-    float[6] state3;
-    for (int i = 0; i < 6; i++) {
-        state3[i] = state[i] + k2[i] * stepSize * 0.5;
-    }
-    float[6] k3 = geodesic(state3, E);
+    GeodesicStepState k2 = geodesic(state2, E);
 
-    float[6] state4;
-    for (int i = 0; i < 6; i++) {
-        state4[i] = state[i] + k3[i] * stepSize;
-    }
-    float[6] k4 = geodesic(state4, E);
+    GeodesicStepState state3;
+    state3.r = state.r + k2.r * halfStepSize;
+    state3.theta = state.theta + k2.theta * halfStepSize;
+    state3.phi = state.phi + k2.phi * halfStepSize;
+    state3.dr = state.dr + k2.dr * halfStepSize;
+    state3.dtheta = state.dtheta + k2.dtheta * halfStepSize;
+    state3.dphi = state.dphi + k2.dphi * halfStepSize;
 
-    float[6] newState;
-    for (int i = 0; i < 6; i++) {
-        newState[i] = state[i] + (stepSize / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]);
-    }
+    GeodesicStepState k3 = geodesic(state3, E);
+
+    GeodesicStepState state4;
+    state4.r = state.r + k3.r * stepSize;
+    state4.theta = state.theta + k3.theta * stepSize;
+    state4.phi = state.phi + k3.phi * stepSize;
+    state4.dr = state.dr + k3.dr * stepSize;
+    state4.dtheta = state.dtheta + k3.dtheta * stepSize;
+    state4.dphi = state.dphi + k3.dphi * stepSize;
+
+    GeodesicStepState k4 = geodesic(state4, E);
+
+    GeodesicStepState newState;
+    float stepSizeOver6 = stepSize / 6.0;
+    newState.r = state.r + stepSizeOver6 * (k1.r + 2.0 * k2.r + 2.0 * k3.r + k4.r);
+    newState.theta = state.theta + stepSizeOver6 * (k1.theta + 2.0 * k2.theta + 2.0 * k3.theta + k4.theta);
+    newState.phi = state.phi + stepSizeOver6 * (k1.phi + 2.0 * k2.phi + 2.0 * k3.phi + k4.phi);
+    newState.dr = state.dr + stepSizeOver6 * (k1.dr + 2.0 * k2.dr + 2.0 * k3.dr + k4.dr);
+    newState.dtheta = state.dtheta + stepSizeOver6 * (k1.dtheta + 2.0 * k2.dtheta + 2.0 * k3.dtheta + k4.dtheta);
+    newState.dphi = state.dphi + stepSizeOver6 * (k1.dphi + 2.0 * k2.dphi + 2.0 * k3.dphi + k4.dphi);
+
     return newState;
 }
 
@@ -149,7 +162,7 @@ RayTraceResult rayTrace(Photon photon)
         float y = photon.position.y;
         float z = photon.position.z;
 
-        float r = hypot(x, y, z);
+        float r = length(vec3(x, y, z));
         float theta = acos(z / r);
         float phi = atan(y, x);
 
@@ -165,25 +178,25 @@ RayTraceResult rayTrace(Photon photon)
         float dtheta = photon.dtheta;
         float dphi = photon.dphi;
 
-        float[] state = float[6](r, theta, phi, dr, dtheta, dphi);
-//        GeodesicStepState gs = GeodesicStepState(r, theta, phi, dr, dtheta, dphi);
+        GeodesicStepState state = GeodesicStepState(r, theta, phi, dr, dtheta, dphi);
 
         // RK4 integration step
-        float[6] newState = rk4Step(state, photon.E, u_stepSize);
+        GeodesicStepState newState = rk4Step(state, photon.E, u_stepSize);
 
-        r = newState[0];
-        theta = newState[1];
-        phi = newState[2];
-        dr = newState[3];
-        dtheta = newState[4];
-        dphi = newState[5];
+        r = newState.r;
+        theta = newState.theta;
+        phi = newState.phi;
+        dr = newState.dr;
+        dtheta = newState.dtheta;
+        dphi = newState.dphi;
 
         photon.dr = dr;
         photon.dtheta = dtheta;
         photon.dphi = dphi;
 
-        float newX = r * sin(theta) * cos(phi);
-        float newY = r * sin(theta) * sin(phi);
+        float sinTheta = sin(theta);
+        float newX = r * sinTheta * cos(phi);
+        float newY = r * sinTheta * sin(phi);
         float newZ = r * cos(theta);
 
         photon.position = vec3(newX, newY, newZ);
@@ -224,6 +237,7 @@ vec3 normal(vec3 p) // from https://iquilezles.org/articles/normalsSDF/
         e = 0.5773 * (2.0 * vec3((((i + 3) >> 1) & 1), ((i >> 1) & 1), (i & 1)) - 1.0);
         n += e * scene(p + e * u_eps);
     }
+
     return normalize(n);
 }
 
@@ -235,7 +249,7 @@ Photon initializePhoton(vec3 rayOrigin, vec3 rayDirection) {
     float y0 = rayOrigin.y;
     float z0 = rayOrigin.z;
 
-    float r0 = hypot(x0, y0, z0);
+    float r0 = length(vec3(x0, y0, z0));
     float theta0 = acos(z0 / r0);
     float phi0 = atan(y0, x0);
 
@@ -316,9 +330,7 @@ void main()
     float theta = acos(z / r);
     float phi = atan(y, x);
 
-    vec3 updatedDirection = normalize(
-        sphericalToCartesianVelocity(r, theta, phi, photon.dr, photon.dtheta, photon.dphi)
-    );
+    vec3 updatedDirection = sphericalToCartesianVelocity(r, theta, phi, photon.dr, photon.dtheta, photon.dphi);
 
     // Find the hit position
     vec3 hitPoint = photon.position;
