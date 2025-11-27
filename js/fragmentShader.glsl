@@ -125,7 +125,12 @@ float[6] rk4Step(float[6] state, float E, float stepSize)
     return newState;
 }
 
-float rayTrace(Photon photon)
+struct RayTraceResult {
+    Photon photon;
+    float distanceTravelled;
+};
+
+RayTraceResult rayTrace(Photon photon)
 {
     float thetaEpsilon = 1e-4;
 
@@ -186,7 +191,7 @@ float rayTrace(Photon photon)
         d += u_stepSize;
     }
 
-    return d; // finally, return scene distance
+    return RayTraceResult(photon, d); // finally, return scene distance
 }
 
 vec3 sceneCol(vec3 p)
@@ -295,7 +300,8 @@ void main()
     Photon photon = initializePhoton(rayOrigin, rayDirection);
 
     // Ray tracing and find total distance travelled
-    float distanceTravelled = rayTrace(photon); // use normalized ray
+    RayTraceResult result = rayTrace(photon);
+    photon = result.photon;
 
     float x = photon.position.x;
     float y = photon.position.y;
@@ -314,7 +320,7 @@ void main()
     // Get normal of hit point
     vec3 normal = normal(hitPoint);
 
-    if (distanceTravelled >= u_maxDis)
+    if (result.distanceTravelled >= u_maxDis)
     { // if ray doesn't hit anything
       gl_FragColor = texture(u_backgroundCube, updatedDirection);
     } else
