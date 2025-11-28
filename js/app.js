@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
+import fragmentShaderMask from './fragmentShaderMask.glsl';
 import { config } from './config';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import { BlackHole } from './objects/blackHole';
@@ -59,35 +60,44 @@ const uniforms = {
 
 // Create a ray marching plane
 const geometry = new THREE.PlaneGeometry();
-const material = new THREE.ShaderMaterial({
+// const material = new THREE.ShaderMaterial({
+//   vertexShader: vertexShader,
+//   fragmentShader: fragmentShader,
+//   uniforms: uniforms
+// });
+// const rayTracePlane = new THREE.Mesh(geometry, material);
+
+// Mask material for bloom effect of accretion disc
+const maskMaterial = new THREE.ShaderMaterial({
   vertexShader: vertexShader,
-  fragmentShader: fragmentShader,
+  fragmentShader: fragmentShaderMask,
   uniforms: uniforms
 });
-const rayTracePlane = new THREE.Mesh(geometry, material);
+const maskPlane = new THREE.Mesh(geometry, maskMaterial);
 
 // Get the width and height of the near plane
 const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
 const nearPlaneHeight = nearPlaneWidth / camera.aspect;
 
 // Scale the ray marching plane
-rayTracePlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
+// rayTracePlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
+maskPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
 // Add plane to scene
-scene.add(rayTracePlane);
+// scene.add(rayTracePlane);
+
+// Set up mask render target
+const maskRenderTarget = new THREE.WebGLRenderTarget(resolution.width, resolution.height);
 
 // Set up bloom postprocessing
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(resolution.width, resolution.height),
-  1.5, // strength
-  0.4, // radius
+  1, // strength
+  0.3, // radius
   0.85 // threshold
 );
-bloomPass.threshold = 0.2;
-bloomPass.strength = 1.5;
-bloomPass.radius = 0.4;
 composer.addPass(bloomPass);
 
 // Needed inside update function
@@ -102,11 +112,27 @@ const animate = () => {
 
   // Update screen plane position and rotation
   cameraForwardPos = camera.position.clone().add(camera.getWorldDirection(VECTOR3ZERO).multiplyScalar(camera.near));
-  rayTracePlane.position.copy(cameraForwardPos);
-  rayTracePlane.rotation.copy(camera.rotation);
+  // rayTracePlane.position.copy(cameraForwardPos);
+  // rayTracePlane.rotation.copy(camera.rotation);
+  maskPlane.position.copy(cameraForwardPos);
+  maskPlane.rotation.copy(camera.rotation);
 
-  // renderer.render(scene, camera);
+  // 1. Render mask to texture
+  // scene.remove(rayTracePlane);
+  scene.add(maskPlane);
+  renderer.setRenderTarget(maskRenderTarget);
+  renderer.clear();
+  renderer.render(scene, camera);
 
+  // 2. Use mask as bloom input
+  bloomPass.renderTargetBright = maskRenderTarget;
+
+  // 3. Render main scene with bloom
+  // scene.remove(maskPlane);
+  // scene.remove(rayTracePlane);
+  // scene.add(rayTracePlane);
+  scene.add(maskPlane);
+  renderer.setRenderTarget(null);
   composer.render();
 
   uniforms.u_time.value = (Date.now() - time) / 1000;
@@ -123,9 +149,7 @@ window.addEventListener('resize', () => {
 
   const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
   const nearPlaneHeight = nearPlaneWidth / camera.aspect;
-  rayTracePlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
+  // rayTracePlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
   if (renderer) renderer.setSize(resolution.width, resolution.height);
-  // composer.setSize(resolution.width, resolution.height);
-  // bloomPass.setSize(resolution.width, resolution.height);
 });
