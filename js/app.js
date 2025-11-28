@@ -5,6 +5,7 @@ import fragmentShader from './fragmentShader.glsl';
 import { config } from './config';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import { BlackHole } from './objects/blackHole';
+import { EffectComposer, RenderPass, UnrealBloomPass } from 'three/addons';
 
 
 // Create a scene
@@ -36,11 +37,6 @@ controls.maxDistance = 200;
 controls.minDistance = 2.5;
 controls.enableDamping = true;
 
-// Add directional light
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(1, 1, 1);
-scene.add(light);
-
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 
 // Define uniforms
@@ -54,17 +50,9 @@ const uniforms = {
   u_maxSteps: { value: 1000 },
   u_stepSize: { value: config.PHOTON_STEP_SIZE },
 
-
   u_camPos: { value: camera.position },
   u_camToWorldMat: { value: camera.matrixWorld },
   u_camInvProjMat: { value: camera.projectionMatrixInverse },
-
-  u_lightDir: { value: light.position },
-
-  u_diffIntensity: { value: 0.5 },
-  u_specIntensity: { value: 3 },
-  u_ambientIntensity: { value: 0.15 },
-  u_shininess: { value: 16 },
 
   u_time: { value: 0 }
 };
@@ -76,17 +64,31 @@ const material = new THREE.ShaderMaterial({
   fragmentShader: fragmentShader,
   uniforms: uniforms
 });
-const rayMarchPlane = new THREE.Mesh(geometry, material);
+const rayTracePlane = new THREE.Mesh(geometry, material);
 
 // Get the width and height of the near plane
 const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
 const nearPlaneHeight = nearPlaneWidth / camera.aspect;
 
 // Scale the ray marching plane
-rayMarchPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
+rayTracePlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
 // Add plane to scene
-scene.add(rayMarchPlane);
+scene.add(rayTracePlane);
+
+// Set up bloom postprocessing
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(resolution.width, resolution.height),
+  1.5, // strength
+  0.4, // radius
+  0.85 // threshold
+);
+bloomPass.threshold = 0.2;
+bloomPass.strength = 1.5;
+bloomPass.radius = 0.4;
+composer.addPass(bloomPass);
 
 // Needed inside update function
 let cameraForwardPos = new THREE.Vector3(0, 0, -1);
@@ -100,10 +102,12 @@ const animate = () => {
 
   // Update screen plane position and rotation
   cameraForwardPos = camera.position.clone().add(camera.getWorldDirection(VECTOR3ZERO).multiplyScalar(camera.near));
-  rayMarchPlane.position.copy(cameraForwardPos);
-  rayMarchPlane.rotation.copy(camera.rotation);
+  rayTracePlane.position.copy(cameraForwardPos);
+  rayTracePlane.rotation.copy(camera.rotation);
 
-  renderer.render(scene, camera);
+  // renderer.render(scene, camera);
+
+  composer.render();
 
   uniforms.u_time.value = (Date.now() - time) / 1000;
 
@@ -119,7 +123,9 @@ window.addEventListener('resize', () => {
 
   const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
   const nearPlaneHeight = nearPlaneWidth / camera.aspect;
-  rayMarchPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
+  rayTracePlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
   if (renderer) renderer.setSize(resolution.width, resolution.height);
+  // composer.setSize(resolution.width, resolution.height);
+  // bloomPass.setSize(resolution.width, resolution.height);
 });

@@ -185,7 +185,7 @@ RayTraceResult rayTrace(Photon photon)
         float maxStep = u_stepSize * 3.0;  // larger far away
         float farRadius = 10.0 * u_schwarzschildRadius;
         float adaptiveStep = mix(minStep, maxStep, smoothstep(u_schwarzschildRadius, farRadius, r)); // todo - now we only adapt based on distance from black hole center. We should also consider distance from accretion disk - use SDF for blackhole+sphere combined.
- 0
+
         // RK4 integration step
         GeodesicStepState newState = rk4Step(state, photon.E, adaptiveStep);
 
@@ -222,13 +222,13 @@ RayTraceResult rayTrace(Photon photon)
 vec3 sceneCol(vec3 p)
 {
     float blackHoleDist = blackHoleDist(p);
-    float sphere2Dis = accretionDiscDist(p);
+    float accretionDiscDist = accretionDiscDist(p);
 
     vec3 accretionDiscColor = vec3(1, 0, 0); // Red
     vec3 blackHoleColor = vec3(0.0, 0.0, 0.0);
 
     // Return color based on which object is closer
-    if (blackHoleDist < sphere2Dis) {
+    if (blackHoleDist < accretionDiscDist) {
         return blackHoleColor;
     } else {
         return accretionDiscColor;
