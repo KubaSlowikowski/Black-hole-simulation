@@ -294,13 +294,13 @@ void main()
     // Ray tracing and find total distance travelled
     RayTraceResult result = rayTrace(photon);
 
-    float accretionDiscHit = 0.0;
-    if (result.distanceTravelled < u_maxDis) {
+    vec3 finalColor = vec3(0.0);
+    if (result.distanceTravelled < u_maxDis) { // TODO - we can optimize maxDistance for accretion disc since it is relatively close to black hole
         float d = accretionDiscDist(result.photon.position);
         if (d < u_eps) {
-            accretionDiscHit = 1.0;
+            finalColor = vec3(0.5, 0.5, 1.0); // hit accretion disc. We can easily add nice looking texture here
         }
     }
 
-    gl_FragColor = vec4(vec3(accretionDiscHit), 1.0);
+    gl_FragColor = vec4(finalColor, 1.0);
 }

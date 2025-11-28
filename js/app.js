@@ -94,9 +94,9 @@ const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(resolution.width, resolution.height),
-  1, // strength
-  0.3, // radius
-  0.85 // threshold
+  2, // strength
+  0.75, // radius
+  0.01 // threshold
 );
 composer.addPass(bloomPass);
 
