@@ -50,7 +50,7 @@ const uniforms = {
   u_blackHolePosition: { value: blackHole.position },
 
   u_eps: { value: 0.01 },
-  u_maxDis: { value: 30 },
+  u_maxDis: { value: 30 * blackHole.rs }, // todo - we should adjust this based on camera distance from black hole. Otherwise, black hole will disappear when camera is too far
   u_maxSteps: { value: 1000 },
   u_stepSize: { value: config.PHOTON_STEP_SIZE },
 

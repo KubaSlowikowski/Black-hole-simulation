@@ -180,8 +180,14 @@ RayTraceResult rayTrace(Photon photon)
 
         GeodesicStepState state = GeodesicStepState(r, theta, phi, dr, dtheta, dphi);
 
+        // Compute adaptive step size based on distance from black hole
+        float minStep = u_stepSize * 0.5; // smaller near black hole
+        float maxStep = u_stepSize * 3.0;  // larger far away
+        float farRadius = 10.0 * u_schwarzschildRadius;
+        float adaptiveStep = mix(minStep, maxStep, smoothstep(u_schwarzschildRadius, farRadius, r)); // todo - now we only adapt based on distance from black hole center. We should also consider distance from accretion disk - use SDF for blackhole+sphere combined.
+ 0
         // RK4 integration step
-        GeodesicStepState newState = rk4Step(state, photon.E, u_stepSize);
+        GeodesicStepState newState = rk4Step(state, photon.E, adaptiveStep);
 
         r = newState.r;
         theta = newState.theta;
@@ -207,7 +213,7 @@ RayTraceResult rayTrace(Photon photon)
         if (cd < u_eps || d >= u_maxDis) break;
 
         // otherwise, add new scene distance to total distance
-        d += u_stepSize;
+        d += adaptiveStep;
     }
 
     return RayTraceResult(photon, d); // finally, return scene distance
