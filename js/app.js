@@ -1,3 +1,4 @@
+// javascript
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import vertexShader from './vertexShader.glsl';
@@ -10,34 +11,27 @@ import { BlackHole } from './objects/blackHole';
 import { EffectComposer, OutputPass, RenderPass, ShaderPass, UnrealBloomPass } from 'three/addons';
 import { BLOOM_PARAMS, RENDERER_PARAMS } from './postProcessingConfig';
 
-// Create a scene
 const scene = new THREE.Scene();
 
-// Create a camera
 const resolution = {
-  width: 800, // window.innerWidth
-  height: 500 // window.innerHeight
+  width: 800,
+  height: 500
 };
 const camera = new THREE.PerspectiveCamera(75, resolution.width / resolution.height, 0.1, 1000);
 camera.position.set(config.CAMERA.x, config.CAMERA.y, config.CAMERA.z);
 
-// Create a renderer
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(resolution.width, resolution.height);
 renderer.toneMapping = RENDERER_PARAMS.toneMapping;
 renderer.toneMappingExposure = RENDERER_PARAMS.toneMappingExposure;
-// renderer.outputEncoding = RENDERER_PARAMS.outputEncoding;
-renderer.setAnimationLoop(animate);
 document.body.appendChild(renderer.domElement);
 
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
-// Set background color
 const image = '../public/galaxy.jpg';
 const backgroundTexture = new THREE.CubeTextureLoader().load([image, image, image, image, image, image]);
 
-// Add orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.maxDistance = 200;
 controls.minDistance = 2.5;
@@ -45,20 +39,19 @@ controls.enableDamping = true;
 
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 
-// Define uniforms
 const uniforms = {
   u_backgroundCube: { value: backgroundTexture },
   u_schwarzschildRadius: { value: blackHole.rs },
   u_blackHolePosition: { value: blackHole.position },
 
   u_eps: { value: 0.01 },
-  u_maxDis: { value: 30 * blackHole.rs }, // todo - we should adjust this based on camera distance from black hole. Otherwise, black hole will disappear when camera is too far
+  u_maxDis: { value: 30 * blackHole.rs },
   u_maxSteps: { value: 1000 },
   u_stepSize: { value: config.PHOTON_STEP_SIZE },
 
-  u_camPos: { value: camera.position },
-  u_camToWorldMat: { value: camera.matrixWorld },
-  u_camInvProjMat: { value: camera.projectionMatrixInverse },
+  u_camPos: { value: new THREE.Vector3().copy(camera.position) },
+  u_camToWorldMat: { value: new THREE.Matrix4().copy(camera.matrixWorld) },
+  u_camInvProjMat: { value: new THREE.Matrix4().copy(camera.projectionMatrixInverse) },
 
   u_time: { value: 0 }
 };
@@ -68,16 +61,15 @@ const uniformsForBloomEffectOnly = {
   u_blackHolePosition: { value: blackHole.position },
 
   u_eps: { value: 0.1 },
-  u_maxDis: { value: 30 * blackHole.rs }, // todo - we should adjust this based on camera distance from black hole. Otherwise, black hole will disappear when camera is too far
+  u_maxDis: { value: 30 * blackHole.rs },
   u_maxSteps: { value: 500 },
   u_stepSize: { value: config.PHOTON_STEP_SIZE * 2 },
 
-  u_camPos: { value: camera.position },
-  u_camToWorldMat: { value: camera.matrixWorld },
-  u_camInvProjMat: { value: camera.projectionMatrixInverse },
+  u_camPos: { value: new THREE.Vector3().copy(camera.position) },
+  u_camToWorldMat: { value: new THREE.Matrix4().copy(camera.matrixWorld) },
+  u_camInvProjMat: { value: new THREE.Matrix4().copy(camera.projectionMatrixInverse) }
 };
 
-// Create a ray marching plane
 const geometry = new THREE.PlaneGeometry();
 const material = new THREE.ShaderMaterial({
   vertexShader: vertexShader,
@@ -86,7 +78,6 @@ const material = new THREE.ShaderMaterial({
 });
 const rayTracePlane = new THREE.Mesh(geometry, material);
 
-// Mask material for bloom effect of accretion disc
 const bloomMaterial = new THREE.ShaderMaterial({
   vertexShader: vertexShader,
   fragmentShader: accretionDiscBloomFragmentShader,
@@ -94,97 +85,107 @@ const bloomMaterial = new THREE.ShaderMaterial({
 });
 const bloomPlane = new THREE.Mesh(geometry, bloomMaterial);
 
-// Get the width and height of the near plane
 const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
 const nearPlaneHeight = nearPlaneWidth / camera.aspect;
-
-// Scale the ray tracing plane
 rayTracePlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 bloomPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
-// Set up bloom postprocessing
-const renderScene = new RenderPass(scene, camera);
-
+// --- Bloom composer ---
 const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(resolution.width, resolution.height),
-  BLOOM_PARAMS.strength, // strength
-  BLOOM_PARAMS.radius, // radius
-  BLOOM_PARAMS.threshold // threshold
+  BLOOM_PARAMS.strength,
+  BLOOM_PARAMS.radius,
+  BLOOM_PARAMS.threshold
 );
 
-const bloomRenderTarget = new THREE.WebGLRenderTarget( resolution.width, resolution.height, { type: THREE.HalfFloatType } );
+// Render bloom into its own render target; we do not need a RenderPass here
+const bloomRenderTarget = new THREE.WebGLRenderTarget(
+  resolution.width,
+  resolution.height,
+  { type: THREE.HalfFloatType }
+);
 const bloomComposer = new EffectComposer(renderer, bloomRenderTarget);
-bloomComposer.addPass(renderScene);
+// Scene is rendered implicitly by EffectComposer, because we will set it before render()
+bloomComposer.addPass(new RenderPass(scene, camera));
 bloomComposer.addPass(bloomPass);
 bloomComposer.renderToScreen = false;
+
+// --- Final composer ---
+const mainRenderPass = new RenderPass(scene, camera);
 
 const mixPass = new ShaderPass(
   new THREE.ShaderMaterial({
     uniforms: {
-      baseTexture: { value: null }, // contains original textures of the bloomed objects
-      bloomTexture: { value: bloomComposer.renderTarget2.texture } // contains object textures after bloom effect is applied to them
+      baseTexture: { value: null },
+      bloomTexture: { value: bloomComposer.renderTarget2.texture }
     },
     vertexShader: vertexShader,
     fragmentShader: mixFragmentShader,
     defines: {}
-  }), 'baseTexture'
+  }),
+  'baseTexture'
 );
 mixPass.needsSwap = true;
 
 const outputPass = new OutputPass();
 
-const finalRenderTarget = new THREE.WebGLRenderTarget( resolution.width, resolution.height, { type: THREE.HalfFloatType, samples: 4 } );
-const finalComposer = new EffectComposer(renderer, finalRenderTarget);
-finalComposer.addPass(renderScene);
+const finalComposer = new EffectComposer(renderer);
+finalComposer.addPass(mainRenderPass);
 finalComposer.addPass(mixPass);
 finalComposer.addPass(outputPass);
 
-// Needed inside update function
 const VECTOR3ZERO = new THREE.Vector3(0, 0, 0);
 
-renderView();
+function updateCameraUniforms() {
+  camera.updateMatrixWorld();
+  camera.updateProjectionMatrix();
+
+  uniforms.u_camPos.value.copy(camera.position);
+  uniforms.u_camToWorldMat.value.copy(camera.matrixWorld);
+  uniforms.u_camInvProjMat.value.copy(camera.projectionMatrixInverse);
+
+  uniformsForBloomEffectOnly.u_camPos.value.copy(camera.position);
+  uniformsForBloomEffectOnly.u_camToWorldMat.value.copy(camera.matrixWorld);
+  uniformsForBloomEffectOnly.u_camInvProjMat.value.copy(camera.projectionMatrixInverse);
+}
 
 function renderView() {
-  let cameraForwardPos = camera.position.clone().add(camera.getWorldDirection(VECTOR3ZERO).multiplyScalar(camera.near));
+  updateCameraUniforms();
+
+  const cameraForwardPos = camera.position
+    .clone()
+    .add(camera.getWorldDirection(VECTOR3ZERO).multiplyScalar(camera.near));
+
   rayTracePlane.position.copy(cameraForwardPos);
   rayTracePlane.rotation.copy(camera.rotation);
   bloomPlane.position.copy(cameraForwardPos);
   bloomPlane.rotation.copy(camera.rotation);
 
-  // --- 1. Render bloomPlane to bloomComposer ---
-  // Only bloomPlane in scene
+  // 1. render bloom
   scene.clear();
   scene.add(bloomPlane);
   bloomComposer.render();
 
-  // --- 2. Render rayTracePlane to mainComposer ---
+  // 2. render main with mixing
   scene.clear();
   scene.add(rayTracePlane);
-  renderer.setRenderTarget(finalRenderTarget);
-  renderer.clear();
-  renderer.render(scene, camera);
-
-  // --- 3. Mix both textures and display ---
-  mixPass.material.uniforms.baseTexture.value = finalRenderTarget.texture;
   mixPass.material.uniforms.bloomTexture.value = bloomComposer.renderTarget2.texture;
 
-  renderer.setRenderTarget(null); // Render to screen
+  renderer.setRenderTarget(null);
   finalComposer.render();
-
-  controls.update();
-  stats.update();
 }
 
-// Render the scene
 function animate() {
   requestAnimationFrame(animate);
 
-  // Update screen plane position and rotation
   controls.update();
   stats.update();
-};
 
-// Handle window resize
+  renderView();
+}
+
+animate();
+
 window.addEventListener('resize', () => {
   camera.aspect = resolution.width / resolution.height;
   camera.updateProjectionMatrix();
@@ -192,8 +193,9 @@ window.addEventListener('resize', () => {
   const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
   const nearPlaneHeight = nearPlaneWidth / camera.aspect;
   rayTracePlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
+  bloomPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
-  if (renderer) renderer.setSize(resolution.width, resolution.height);
-  if (bloomComposer) bloomComposer.setSize(resolution.width, resolution.height);
-  if (finalComposer) finalComposer.setSize(resolution.width, resolution.height);
+  renderer.setSize(resolution.width, resolution.height);
+  bloomComposer.setSize(resolution.width, resolution.height);
+  finalComposer.setSize(resolution.width, resolution.height);
 });

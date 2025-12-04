@@ -224,7 +224,7 @@ vec3 sceneCol(vec3 p)
     float blackHoleDist = blackHoleDist(p);
     float accretionDiscDist = accretionDiscDist(p);
 
-    vec3 accretionDiscColor = vec3(1, 0, 0); // Red
+    vec3 accretionDiscColor = vec3(1.0, 0, 0); // Red
     vec3 blackHoleColor = vec3(0.0, 0.0, 0.0);
 
     // Return color based on which object is closer
@@ -337,6 +337,7 @@ void main()
     float phi = atan(y, x);
 
     vec3 updatedDirection = sphericalToCartesianVelocity(r, theta, phi, photon.dr, photon.dtheta, photon.dphi);
+    updatedDirection = normalize(updatedDirection);
 
     // Find the hit position
     vec3 hitPoint = photon.position;
@@ -347,6 +348,7 @@ void main()
     if (result.distanceTravelled >= u_maxDis)
     { // if ray doesn't hit anything
       gl_FragColor = texture(u_backgroundCube, updatedDirection);
+//      gl_FragColor = vec4(0.0,1.0,0.0,1.0); // green for debugging
     } else
     { // if ray hits something
       vec3 color = sceneCol(hitPoint);
