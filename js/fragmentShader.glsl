@@ -59,10 +59,10 @@ float scene(vec3 p) {
     float blackHoleDist = blackHoleDist(p);
 
     // distance to accretion disk
-    float accretionDiscColor = accretionDiscDist(p);
+    float accretionDist = accretionDiscDist(p);
 
     // return the minimum distance between the two spheres
-    return min(blackHoleDist, accretionDiscColor);
+    return min(blackHoleDist, accretionDist);
 }
 
 GeodesicStepState geodesic(GeodesicStepState state, float E)
