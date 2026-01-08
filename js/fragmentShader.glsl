@@ -8,7 +8,7 @@ uniform float u_schwarzschildRadius;
 uniform vec3 u_blackHolePosition;
 
 uniform samplerCube u_backgroundCube;
-uniform sampler2D u_uvGridTexture;
+uniform sampler2D u_accretionDiscTexture;
 
 uniform float u_eps;
 uniform float u_maxDis;
@@ -229,15 +229,14 @@ vec2 uvPlanar(vec3 p, float outerRadius)
     return vec2(u, v);
 }
 
-vec3 sceneCol(vec3 p)
+vec4 sceneCol(vec3 p)
 {
     float blackHoleDist = blackHoleDist(p);
     float accretionDiscDist = accretionDiscDist(p);
 
-//        vec3 accretionDiscColor = vec3(1.0, 0, 0);
     vec2 uv = uvPlanar(p, 7.0 * u_schwarzschildRadius);
-    vec3 accretionDiscColor = texture(u_uvGridTexture, uv).rgb;
-    vec3 blackHoleColor = vec3(0.0, 0.0, 0.0);
+    vec4 accretionDiscColor = texture(u_accretionDiscTexture, uv);
+    vec4 blackHoleColor = vec4(0.0, 0.0, 0.0, 1.0);
 
     // Return color based on which object is closer
     if (blackHoleDist < accretionDiscDist) {
@@ -362,7 +361,6 @@ void main()
       gl_FragColor = texture(u_backgroundCube, updatedDirection);
     } else
     { // if ray hits something
-      vec3 color = sceneCol(hitPoint);
-      gl_FragColor = vec4(color, 1); // color output
+      gl_FragColor = sceneCol(hitPoint); // color output
     }
 }

@@ -6,7 +6,10 @@ export const config = {
   // GRAVITATIONAL_CONSTANT: 6.67430e-11
   GRAVITATIONAL_CONSTANT: 1,
   PHOTON_STEP_SIZE: 0.1,
-
+  RESOLUTION: {
+    width: 800,
+    height: 600
+  },
   CAMERA: {
     x: 5,
     y: 3.0,

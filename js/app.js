@@ -13,10 +13,7 @@ import { BLOOM_PARAMS, RENDERER_PARAMS } from './postProcessingConfig';
 
 const scene = new THREE.Scene();
 
-const resolution = {
-  width: 800,
-  height: 500
-};
+const resolution = config.RESOLUTION;
 const camera = new THREE.PerspectiveCamera(75, resolution.width / resolution.height, 0.1, 1000);
 camera.position.set(config.CAMERA.x, config.CAMERA.y, config.CAMERA.z);
 
@@ -31,10 +28,10 @@ const stats = new Stats();
 document.body.appendChild(stats.dom);
 
 const image = '../public/galaxy.jpg';
-const uvGridImage = '../public/UV_grid.png';
+const accretionDiscImage = '../public/accretionDisc.png';
 const backgroundTexture = new THREE.CubeTextureLoader().load([image, image, image, image, image, image]);
-const uvGridTexture = new THREE.TextureLoader().load(uvGridImage);
-uvGridTexture.colorSpace = THREE.SRGBColorSpace;
+const accretionDiscTexture = new THREE.TextureLoader().load(accretionDiscImage);
+accretionDiscTexture.colorSpace = THREE.SRGBColorSpace;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.maxDistance = 200;
@@ -57,7 +54,7 @@ const uniforms = {
   u_camInvProjMat: { value: new THREE.Matrix4().copy(camera.projectionMatrixInverse) },
 
   u_backgroundCube: { value: backgroundTexture },
-  u_uvGridTexture: { value: uvGridTexture },
+  u_accretionDiscTexture: { value: accretionDiscTexture },
 
   u_time: { value: 0 }
 };
