@@ -295,7 +295,7 @@ void main()
     if (result.distanceTravelled < u_maxDis) { // TODO - we can optimize maxDistance for accretion disc since it is relatively close to black hole
         float d = accretionDiscDist(result.photon.position);
         if (d < u_eps) {
-            finalColor = vec3(0.5, 0.5, 1.0); // hit accretion disc. We can easily add nice looking texture here
+            finalColor = vec3(0.0, 0.0, 0.0); // hit accretion disc. We can easily add nice looking texture here
 //            finalColor = vec3(1.0,1.0,1.0); // hit accretion disc. We can easily add nice looking texture here
         }
     }

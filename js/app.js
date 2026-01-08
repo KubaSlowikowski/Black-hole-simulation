@@ -24,13 +24,17 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(resolution.width, resolution.height);
 renderer.toneMapping = RENDERER_PARAMS.toneMapping;
 renderer.toneMappingExposure = RENDERER_PARAMS.toneMappingExposure;
+
 document.body.appendChild(renderer.domElement);
 
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
 const image = '../public/galaxy.jpg';
+const uvGridImage = '../public/UV_grid.png';
 const backgroundTexture = new THREE.CubeTextureLoader().load([image, image, image, image, image, image]);
+const uvGridTexture = new THREE.TextureLoader().load(uvGridImage);
+uvGridTexture.colorSpace = THREE.SRGBColorSpace;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.maxDistance = 200;
@@ -40,7 +44,6 @@ controls.enableDamping = true;
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 
 const uniforms = {
-  u_backgroundCube: { value: backgroundTexture },
   u_schwarzschildRadius: { value: blackHole.rs },
   u_blackHolePosition: { value: blackHole.position },
 
@@ -52,6 +55,9 @@ const uniforms = {
   u_camPos: { value: new THREE.Vector3().copy(camera.position) },
   u_camToWorldMat: { value: new THREE.Matrix4().copy(camera.matrixWorld) },
   u_camInvProjMat: { value: new THREE.Matrix4().copy(camera.projectionMatrixInverse) },
+
+  u_backgroundCube: { value: backgroundTexture },
+  u_uvGridTexture: { value: uvGridTexture },
 
   u_time: { value: 0 }
 };
