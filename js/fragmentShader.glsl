@@ -7,8 +7,11 @@ in vec2 vUv;
 uniform float u_schwarzschildRadius;
 uniform vec3 u_blackHolePosition;
 
+uniform float u_accretionDisc_outerRadiusMultiplier;
+uniform float u_accretionDisc_innerRadiusMultiplier;
+uniform float u_accretionDisc_thickness;
+
 uniform samplerCube u_backgroundCube;
-uniform sampler2D u_accretionDiscTexture;
 
 uniform float u_eps;
 uniform float u_maxDis;
@@ -44,9 +47,9 @@ float blackHoleDist(vec3 p) {
 }
 
 float accretionDiscDist(vec3 p) {
-    float outerRadius = 7.0 * u_schwarzschildRadius;
-    float innerRadius = 2.0 * u_schwarzschildRadius;
-    float thickness = 0.02;
+    float outerRadius = u_accretionDisc_outerRadiusMultiplier * u_schwarzschildRadius;
+    float innerRadius = u_accretionDisc_innerRadiusMultiplier * u_schwarzschildRadius;
+    float thickness = u_accretionDisc_thickness;
 
     float radialDistOuter = length(p.xz) - outerRadius;
     float radialDistInner = innerRadius - length(p.xz);
@@ -220,22 +223,12 @@ RayTraceResult rayTrace(Photon photon)
     return RayTraceResult(photon, d); // finally, return scene distance
 }
 
-// Map xz to [0,1]^2 using the outer radius
-vec2 uvPlanar(vec3 p, float outerRadius)
-{
-    // Centered at origin; normalize by outerRadius
-    float u = 0.5 + p.x / (2.0 * outerRadius);
-    float v = 0.5 + p.z / (2.0 * outerRadius);
-    return vec2(u, v);
-}
-
 vec4 sceneCol(vec3 p)
 {
     float blackHoleDist = blackHoleDist(p);
     float accretionDiscDist = accretionDiscDist(p);
 
-    vec2 uv = uvPlanar(p, 7.0 * u_schwarzschildRadius);
-    vec4 accretionDiscColor = texture(u_accretionDiscTexture, uv);
+    vec4 accretionDiscColor = vec4(0.0);
     vec4 blackHoleColor = vec4(0.0, 0.0, 0.0, 1.0);
 
     // Return color based on which object is closer

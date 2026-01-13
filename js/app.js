@@ -1,15 +1,16 @@
 // javascript
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 import accretionDiscBloomFragmentShader from './accretionDiscBloomFragmentShader.glsl';
 import mixFragmentShader from './mixFragmentShader.glsl';
-import { config } from './config';
+import {config} from './config';
 import Stats from 'three/examples/jsm/libs/stats.module';
-import { BlackHole } from './objects/blackHole';
-import { EffectComposer, OutputPass, RenderPass, ShaderPass, UnrealBloomPass } from 'three/addons';
-import { BLOOM_PARAMS, RENDERER_PARAMS } from './postProcessingConfig';
+import {BlackHole} from './objects/blackHole';
+import {EffectComposer, OutputPass, RenderPass, ShaderPass, UnrealBloomPass} from 'three/addons';
+import {BLOOM_PARAMS, RENDERER_PARAMS} from './postProcessingConfig';
+import {BLACK_HOLE_CONFIG} from "./blackHoleConfig";
 
 const scene = new THREE.Scene();
 
@@ -41,36 +42,43 @@ controls.enableDamping = true;
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 
 const uniforms = {
-  u_schwarzschildRadius: { value: blackHole.rs },
-  u_blackHolePosition: { value: blackHole.position },
+  u_schwarzschildRadius: {value: blackHole.rs},
+  u_blackHolePosition: {value: blackHole.position},
 
-  u_eps: { value: 0.01 },
-  u_maxDis: { value: 30 * blackHole.rs },
-  u_maxSteps: { value: 1000 },
-  u_stepSize: { value: config.PHOTON_STEP_SIZE },
+  u_eps: {value: 0.01},
+  u_maxDis: {value: 30 * blackHole.rs},
+  u_maxSteps: {value: 1000},
+  u_stepSize: {value: config.PHOTON_STEP_SIZE * 2},
 
-  u_camPos: { value: new THREE.Vector3().copy(camera.position) },
-  u_camToWorldMat: { value: new THREE.Matrix4().copy(camera.matrixWorld) },
-  u_camInvProjMat: { value: new THREE.Matrix4().copy(camera.projectionMatrixInverse) },
+  u_accretionDisc_outerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.OUTER_RADIUS_MULTIPLIER},
+  u_accretionDisc_innerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.INNER_RADIUS_MULTIPLIER},
+  u_accretionDisc_thickness: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.THICKNESS},
 
-  u_backgroundCube: { value: backgroundTexture },
-  u_accretionDiscTexture: { value: accretionDiscTexture },
+  u_camPos: {value: new THREE.Vector3().copy(camera.position)},
+  u_camToWorldMat: {value: new THREE.Matrix4().copy(camera.matrixWorld)},
+  u_camInvProjMat: {value: new THREE.Matrix4().copy(camera.projectionMatrixInverse)},
 
-  u_time: { value: 0 }
+  u_backgroundCube: {value: backgroundTexture}
 };
 
 const uniformsForBloomEffectOnly = {
-  u_schwarzschildRadius: { value: blackHole.rs },
-  u_blackHolePosition: { value: blackHole.position },
+  u_schwarzschildRadius: {value: blackHole.rs},
+  u_blackHolePosition: {value: blackHole.position},
 
-  u_eps: { value: 0.1 },
-  u_maxDis: { value: 30 * blackHole.rs },
-  u_maxSteps: { value: 500 },
-  u_stepSize: { value: config.PHOTON_STEP_SIZE * 2 },
+  u_eps: {value: 0.1},
+  u_maxDis: {value: 30 * blackHole.rs},
+  u_maxSteps: {value: 500},
+  u_stepSize: {value: config.PHOTON_STEP_SIZE},
 
-  u_camPos: { value: new THREE.Vector3().copy(camera.position) },
-  u_camToWorldMat: { value: new THREE.Matrix4().copy(camera.matrixWorld) },
-  u_camInvProjMat: { value: new THREE.Matrix4().copy(camera.projectionMatrixInverse) }
+  u_accretionDisc_outerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.OUTER_RADIUS_MULTIPLIER},
+  u_accretionDisc_innerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.INNER_RADIUS_MULTIPLIER},
+  u_accretionDisc_thickness: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.THICKNESS},
+
+  u_camPos: {value: new THREE.Vector3().copy(camera.position)},
+  u_camToWorldMat: {value: new THREE.Matrix4().copy(camera.matrixWorld)},
+  u_camInvProjMat: {value: new THREE.Matrix4().copy(camera.projectionMatrixInverse)},
+
+  u_accretionDiscTexture: {value: accretionDiscTexture},
 };
 
 const geometry = new THREE.PlaneGeometry();
@@ -105,7 +113,7 @@ const bloomPass = new UnrealBloomPass(
 const bloomRenderTarget = new THREE.WebGLRenderTarget(
   resolution.width,
   resolution.height,
-  { type: THREE.HalfFloatType }
+  {type: THREE.HalfFloatType}
 );
 const bloomComposer = new EffectComposer(renderer, bloomRenderTarget);
 // Scene is rendered implicitly by EffectComposer, because we will set it before render()
@@ -119,8 +127,8 @@ const mainRenderPass = new RenderPass(scene, camera);
 const mixPass = new ShaderPass(
   new THREE.ShaderMaterial({
     uniforms: {
-      baseTexture: { value: null },
-      bloomTexture: { value: bloomComposer.renderTarget2.texture }
+      baseTexture: {value: null},
+      bloomTexture: {value: bloomComposer.renderTarget2.texture}
     },
     vertexShader: vertexShader,
     fragmentShader: mixFragmentShader,

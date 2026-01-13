@@ -7,6 +7,12 @@ in vec2 vUv;
 uniform float u_schwarzschildRadius;
 uniform vec3 u_blackHolePosition;
 
+uniform float u_accretionDisc_outerRadiusMultiplier;
+uniform float u_accretionDisc_innerRadiusMultiplier;
+uniform float u_accretionDisc_thickness;
+
+uniform sampler2D u_accretionDiscTexture;
+
 uniform float u_eps;
 uniform float u_maxDis;
 uniform int u_maxSteps;
@@ -39,9 +45,9 @@ float blackHoleDist(vec3 p) {
 }
 
 float accretionDiscDist(vec3 p) {
-    float outerRadius = 7.0 * u_schwarzschildRadius;
-    float innerRadius = 2.0 * u_schwarzschildRadius;
-    float thickness = 0.02;
+    float outerRadius = u_accretionDisc_outerRadiusMultiplier * u_schwarzschildRadius;
+    float innerRadius = u_accretionDisc_innerRadiusMultiplier * u_schwarzschildRadius;
+    float thickness = u_accretionDisc_thickness;
 
     float radialDistOuter = length(p.xz) - outerRadius;
     float radialDistInner = innerRadius - length(p.xz);
@@ -276,6 +282,14 @@ Photon initializePhoton(vec3 rayOrigin, vec3 rayDirection) {
     return photon;
 }
 
+vec2 uvPlanar(vec3 p, float outerRadius)
+{
+    // Centered at origin; normalize by outerRadius
+    float u = 0.5 + p.x / (2.0 * outerRadius);
+    float v = 0.5 + p.z / (2.0 * outerRadius);
+    return vec2(u, v);
+}
+
 void main()
 {
     // Get UV from vertex shader
@@ -291,14 +305,14 @@ void main()
 
     // Ray tracing and find total distance travelled
     RayTraceResult result = rayTrace(photon);
-    vec3 finalColor = vec3(0.0);
+    vec4 finalColor = vec4(0.0);
     if (result.distanceTravelled < u_maxDis) { // TODO - we can optimize maxDistance for accretion disc since it is relatively close to black hole
         float d = accretionDiscDist(result.photon.position);
         if (d < u_eps) {
-            finalColor = vec3(0.0, 0.0, 0.0); // hit accretion disc. We can easily add nice looking texture here
-//            finalColor = vec3(1.0,1.0,1.0); // hit accretion disc. We can easily add nice looking texture here
+            vec2 uv = uvPlanar(result.photon.position, u_accretionDisc_outerRadiusMultiplier * u_schwarzschildRadius);
+            finalColor = texture(u_accretionDiscTexture, uv);
         }
     }
 
-    gl_FragColor = vec4(finalColor, 1.0);
+    gl_FragColor = finalColor;
 }
