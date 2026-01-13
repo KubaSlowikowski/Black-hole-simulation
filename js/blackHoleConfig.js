@@ -2,6 +2,10 @@ export const BLACK_HOLE_CONFIG = {
   ACCRETION_DISC: {
     OUTER_RADIUS_MULTIPLIER: 7.0,
     INNER_RADIUS_MULTIPLIER: 2.0,
-    THICKNESS: 0.08
+    THICKNESS: 0.08,
+    ROTATION: {
+      ENABLED: false,
+      SPEED: 1
+    }
   }
 };

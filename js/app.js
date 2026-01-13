@@ -1,10 +1,10 @@
 // javascript
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
-import vertexShader from './vertexShader.glsl';
-import fragmentShader from './fragmentShader.glsl';
-import accretionDiscBloomFragmentShader from './accretionDiscBloomFragmentShader.glsl';
-import mixFragmentShader from './mixFragmentShader.glsl';
+import vertexShader from './shaders/vertexShader.glsl';
+import fragmentShader from './shaders/fragmentShader.glsl';
+import accretionDiscBloomFragmentShader from './shaders/accretionDiscBloomFragmentShader.glsl';
+import mixFragmentShader from './shaders/mixFragmentShader.glsl';
 import {config} from './config';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import {BlackHole} from './objects/blackHole';
@@ -28,9 +28,9 @@ document.body.appendChild(renderer.domElement);
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
-const image = '../public/galaxy.jpg';
+const backgroundImage = '../public/galaxy.jpg';
 const accretionDiscImage = '../public/accretionDisc.png';
-const backgroundTexture = new THREE.CubeTextureLoader().load([image, image, image, image, image, image]);
+const backgroundTexture = new THREE.CubeTextureLoader().load([backgroundImage, backgroundImage, backgroundImage, backgroundImage, backgroundImage, backgroundImage]);
 const accretionDiscTexture = new THREE.TextureLoader().load(accretionDiscImage);
 accretionDiscTexture.colorSpace = THREE.SRGBColorSpace;
 
@@ -79,6 +79,8 @@ const uniformsForBloomEffectOnly = {
   u_camInvProjMat: {value: new THREE.Matrix4().copy(camera.projectionMatrixInverse)},
 
   u_accretionDiscTexture: {value: accretionDiscTexture},
+
+  u_time: {value: 0.0}
 };
 
 const geometry = new THREE.PlaneGeometry();
@@ -186,11 +188,15 @@ function renderView() {
   finalComposer.render();
 }
 
-function animate() {
+function animate(time) {
   requestAnimationFrame(animate);
 
   controls.update();
   stats.update();
+
+  if(BLACK_HOLE_CONFIG.ACCRETION_DISC.ROTATION.ENABLED) {
+    uniformsForBloomEffectOnly.u_time.value = BLACK_HOLE_CONFIG.ACCRETION_DISC.ROTATION.SPEED * time / 1000;
+  }
 
   renderView();
 }

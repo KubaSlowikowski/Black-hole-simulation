@@ -22,6 +22,8 @@ uniform vec3 u_camPos;
 uniform mat4 u_camToWorldMat;
 uniform mat4 u_camInvProjMat;
 
+uniform float u_time;
+
 struct Photon {
     vec3 position;
     float dr;
@@ -282,12 +284,28 @@ Photon initializePhoton(vec3 rayOrigin, vec3 rayDirection) {
     return photon;
 }
 
+/**
+    Helps to map 3D position on accretion disc to 2D UV coordinates.
+    UV coordinates are mapped such that the center of the disc is at (0.5, 0.5),
+    and the outer edge of the disc is at 0.0 and 1.0
+*/
 vec2 uvPlanar(vec3 p, float outerRadius)
 {
     // Centered at origin; normalize by outerRadius
     float u = 0.5 + p.x / (2.0 * outerRadius);
     float v = 0.5 + p.z / (2.0 * outerRadius);
-    return vec2(u, v);
+
+    // Apply rotation around center (0.5, 0.5)
+    vec2 centered = vec2(u, v) - 0.5;
+    float angle = u_time;
+    float cosAngle = cos(angle);
+    float sinAngle = sin(angle);
+
+    vec2 rotated;
+    rotated.x = centered.x * cosAngle - centered.y * sinAngle;
+    rotated.y = centered.x * sinAngle + centered.y * cosAngle;
+
+    return rotated + 0.5;
 }
 
 void main()
