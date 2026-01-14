@@ -28,7 +28,7 @@ document.body.appendChild(renderer.domElement);
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
-const backgroundImage = '../public/galaxy.jpg';
+const backgroundImage = '../public/sky.jpg';
 const accretionDiscImage = '../public/accretionDisc.png';
 const backgroundTexture = new THREE.CubeTextureLoader().load([backgroundImage, backgroundImage, backgroundImage, backgroundImage, backgroundImage, backgroundImage]);
 const accretionDiscTexture = new THREE.TextureLoader().load(accretionDiscImage);
