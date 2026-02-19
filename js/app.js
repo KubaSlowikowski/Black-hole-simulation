@@ -25,8 +25,8 @@ renderer.toneMappingExposure = RENDERER_PARAMS.toneMappingExposure;
 
 document.body.appendChild(renderer.domElement);
 
-const stats = new Stats();
-document.body.appendChild(stats.dom);
+// const stats = new Stats();
+// document.body.appendChild(stats.dom);
 
 const backgroundImage = '../public/sky.jpg';
 const accretionDiscImage = '../public/accretionDisc.png';
@@ -47,8 +47,8 @@ const uniforms = {
 
   u_eps: {value: 0.01},
   u_maxDis: {value: 30 * blackHole.rs},
-  u_maxSteps: {value: 1000},
-  u_stepSize: {value: config.PHOTON_STEP_SIZE * 2},
+  u_maxSteps: {value: 2500},
+  u_stepSize: {value: config.PHOTON_STEP_SIZE / 2},
 
   u_accretionDisc_outerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.OUTER_RADIUS_MULTIPLIER},
   u_accretionDisc_innerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.INNER_RADIUS_MULTIPLIER},
@@ -67,8 +67,8 @@ const uniformsForBloomEffectOnly = {
 
   u_eps: {value: 0.1},
   u_maxDis: {value: 30 * blackHole.rs},
-  u_maxSteps: {value: 500},
-  u_stepSize: {value: config.PHOTON_STEP_SIZE},
+  u_maxSteps: {value: 1000},
+  u_stepSize: {value: config.PHOTON_STEP_SIZE / 2},
 
   u_accretionDisc_outerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.OUTER_RADIUS_MULTIPLIER},
   u_accretionDisc_innerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.INNER_RADIUS_MULTIPLIER},
@@ -192,7 +192,7 @@ function animate(time) {
   requestAnimationFrame(animate);
 
   controls.update();
-  stats.update();
+  // stats.update();
 
   if(BLACK_HOLE_CONFIG.ACCRETION_DISC.ROTATION.ENABLED) {
     uniformsForBloomEffectOnly.u_time.value = BLACK_HOLE_CONFIG.ACCRETION_DISC.ROTATION.SPEED * time / 1000;
