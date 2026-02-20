@@ -6,7 +6,7 @@ The main goal of this project is to deepen my physics knowledge by learning gene
 
 In simple terms: it's a playground where you can *see* how general relativity affects the light rays near a black hole.
 
-![Black Hole Animation](/screenshots/blackhole.gif)
+<img src="/screenshots/blackhole.gif" width="500" alt="Black Hole Animation"/>
 
 [<img src="/screenshots/1.png" width="500"/>](1.png)
 
