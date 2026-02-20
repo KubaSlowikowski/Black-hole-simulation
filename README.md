@@ -4,7 +4,9 @@ This project is an interactive 3D visualization of how light bends around a **no
 
 The main goal of this project is to deepen my physics knowledge by learning general relativity, and to combine it with my passion for programming.
 
-In simple terms: it’s a playground where you can *see* how general relativity affects the light rays near a black hole.
+In simple terms: it's a playground where you can *see* how general relativity affects the light rays near a black hole.
+
+![Black Hole Animation](/screenshots/blackhole.gif)
 
 [<img src="/screenshots/1.png" width="500"/>](1.png)
 
