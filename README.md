@@ -314,6 +314,7 @@ Every time you move the camera, the photon paths are recomputed for the new view
 - The accretion disc is a simplified thin disc:
   - relativistic beaming and redshift are not modelled in detail. The disc brightness and color change is not affected.
 - RK4 integration uses a finite step size, so extreme parameter choices can still lead to numerical artefacts (close to the black hole poles).
+- The mathematical model uses polar coordinates. Near the poles of the black hole, numerical errors may occur that can be noticeable during the simulation.
 - Performance:
   - depends on resolution (`RESOLUTION` in `config.js`), the maximum number of steps, and bloom settings.
   - the goal of this project was to generate physically accurate image. The Application calculates the whole curved path for each pixel in every frame, which makes it slow. I didn't focus on optimization, so there are many possible improvements.
