@@ -276,7 +276,6 @@ Photon initializePhoton(vec3 rayOrigin, vec3 rayDirection) {
     // Convert Cartesian Direction to 3D Polar Velocities
     float dphi0 = (-dx * sin(phi0) + dy * cosPhi0 + 0.0 * dz) / (r0 * sinTheta0); // angular velocity in azimuthal direction
     float dtheta0 = (dx * cosTheta0 * cosPhi0 + dy * cosTheta0 * sin(phi0) - dz * sinTheta0) / r0; // angular velocity in polar direction
-    float dr0_sign = sign(dx * sinTheta0 * cosPhi0 + dy * sinTheta0 * sin(phi0) + dz * cosTheta0);
 
     // Conserved quantities
     float E = 1.0; // conserved energy per unit mass (set to 1 arbitrarily)
@@ -288,6 +287,7 @@ Photon initializePhoton(vec3 rayOrigin, vec3 rayDirection) {
     // Null geodesic constraint:
     // dt/dλ = E / f
     // Solve for dr0:
+    float dr0_sign = sign(dx * sinTheta0 * cosPhi0 + dy * sinTheta0 * sin(phi0) + dz * cosTheta0);
     float dr0 = dr0_sign * sqrt((E * E) - (L_squared * f) / (r0 * r0));
 
     photon.position = vec3(x0, y0, z0);

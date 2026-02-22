@@ -7,7 +7,6 @@ export class BlackHole {
     this.mass = mass;
     this.position = position;
     this.rs = this.calculateSchwarzschildRadius(mass);
-    this.obj = null;
   }
 
   calculateSchwarzschildRadius() {
@@ -23,7 +22,6 @@ export class BlackHole {
     const sphere = new THREE.Mesh(geometry, material);
     scene.add(sphere);
 
-    this.obj = sphere;
     scene.add(sphere);
   }
 }

@@ -1,8 +1,8 @@
 # Ray-traced simulation of a black hole
 
-This project is an interactive 3D visualization of how light bends around a **non-rotating (Schwarzschild) black hole**. Under the hood it uses JavaScript with **Three.js** for 3D graphics and **GLSL** shaders to numerically solve the equations that describe photon motion in curved spacetime.
+This project is an interactive 3D visualization of how light bends around a **non-rotating (Schwarzschild) black hole**. Under the hood, it uses JavaScript with **Three.js** and **GLSL** shaders to numerically solve the equations that describe photon motion in curved spacetime.
 
-In simple terms: it's a playground where you can *see* how general relativity affects the light rays near a black hole.
+In simple terms: it's a playground where you can *see* how general relativity bends light rays near a black hole.
 
 <img src="/screenshots/blackhole.gif" width="500" alt="Black Hole Animation"/>
 
@@ -15,10 +15,12 @@ In simple terms: it's a playground where you can *see* how general relativity af
 ## Overview
 
 - You look at a black hole surrounded by a thin, glowing accretion disc and a distant starry sky.
-- Light rays (photons) are not forced to go straight – their paths are bent by gravity of black hole according to general relativity.
+- Light rays (photons) are not forced to go straight – their paths are bent by the gravity of the black hole, according to general relativity.
 - For every pixel on the screen, the shader calculates photon's path in curved spacetime.
 
 ## How to run the project
+
+Getting it running locally is straightforward – you just need Node.js and npm.
 
 ### Requirements
 
@@ -42,13 +44,13 @@ Then open the URL printed in the console (`http://localhost:8080/`) in your brow
 
 ## Controls
 
-The camera is controlled with the mouse:
+You control the camera with the mouse:
 
 - **Left mouse button** – rotate the camera.
 - **Right mouse button** – move the camera.
 - **Mouse wheel / trackpad scroll** – zoom in and out.
 
-Every time you move the camera, the photon paths are recomputed for the new viewpoint, so you are constantly exploring a new family of null geodesics.
+Every time you move the camera, the photon paths are recomputed for the new viewpoint.
 
 ## Limitations and scope
 
@@ -56,13 +58,13 @@ Every time you move the camera, the photon paths are recomputed for the new view
   - no rotation,
   - no electric charge,
 - The accretion disc is a simplified thin disc:
-  - relativistic beaming and redshift are not modelled in detail. The disc brightness and color change is not affected.
-- RK4 integration uses a finite step size, so extreme parameter choices can still lead to numerical artefacts (close to the black hole poles).
-- The mathematical model uses polar coordinates. Near the poles of the black hole, numerical errors may occur that can be noticeable during the simulation.
+  - relativistic beaming and redshift are not modeled in detail, so the disc brightness and color change are not affected by these effects.
 - Performance:
   - depends on resolution (`RESOLUTION` in `config.js`), the maximum number of steps, and bloom settings.
-  - the goal of this project was to generate physically accurate image. The Application calculates the whole curved path for each pixel in every frame, which makes it slow. I didn't focus on optimization, so there are many possible improvements.
+  - the main goal of this project was to generate physically accurate image. The Application calculates the whole curved path for each pixel in every frame, which makes it slow. I didn't focus on optimization, so there are many possible improvements.
 - If a user moves the camera to far from the black hole, the image will look weird because of ray-tracing maximum distance.
+- The mathematical model uses polar coordinates, near the poles of the black hole numerical errors may occur and become visible in the simulation.
+- RK4 integration uses a finite step size, so extreme parameter choices can still lead to numerical artifacts (especially close to the black hole poles).
 
 Despite these simplifications, the project already shows the key features of general relativity near a black hole: the shadow, the photon sphere, and the strong lensing of both the accretion disc and the background sky.
 
