@@ -1,19 +1,22 @@
 import * as THREE from 'three';
-import { BlackHole } from './objects/blackHole';
-import { Photon } from './objects/photon';
-import { config } from './config';
+import {BlackHole} from './objects/blackHole';
+import {Photon2D} from './objects/photon2D';
+import {config} from './config';
 
-function createPhoton(rs, i, N) {
+/**
+ * We're using null geodesic constraint (ds^2=0) to obtain physically-accurate photon initial velocities.
+ */
+function initializePhoton(rs, i, N) {
 
   const x0 = 10 * rs; // Fixed x position, from the black hole
   const ySpread = 20 * rs;
   const y0 = -ySpread / 2 + (ySpread * i) / (N - 1); // Vary y position
 
-  // Convert to polar coordinates
+  // Convert cartesian to polar coordinates
   const r0 = Math.hypot(x0, y0);
   const phi0 = Math.atan2(y0, x0);
 
-  // Initial direction vector: leftwards
+  // Initial direction vector: we want photon to start moving leftwards (towards the black hole), so dx=-1, dy=0 in Cartesian coordinates
   const dx = -1;
   const dy = 0;
 
@@ -24,7 +27,7 @@ function createPhoton(rs, i, N) {
   const E = 1; // conserved energy per unit mass (set to 1 arbitrarily)
   const L = r0 * r0 * dphi0; // angular momentum per unit mass
 
-  // Schwarzschild factor
+  // Schwarzschild factor f(r) = 1 - rs/r
   const f = 1 - rs / r0; // gravitational redshift factor
 
   // Null geodesic constraint: 0 = -f (dt/dλ)^2 + f^{-1} (dr/dλ)^2 + r^2 (dφ/dλ)^2
@@ -38,7 +41,7 @@ function createPhoton(rs, i, N) {
     console.error(`Invalid initial conditions for photon at index ${i}: dr0 is NaN`);
   }
 
-  return new Photon(new THREE.Vector3(x0, y0, 0), dr0, dphi0, E, L);
+  return new Photon2D(new THREE.Vector3(x0, y0, 0), dr0, dphi0, E, L);
 }
 
 const scene = new THREE.Scene();
@@ -68,7 +71,7 @@ blackHole.render(scene);
 const NUMBER_OF_PHOTONS = 100;
 const photons = [];
 for (let i = 1; i <= NUMBER_OF_PHOTONS; i++) {
-  const photon = createPhoton(blackHole.rs, i, NUMBER_OF_PHOTONS + 1);
+  const photon = initializePhoton(blackHole.rs, i, NUMBER_OF_PHOTONS + 1);
   photons.push(photon);
 }
 
@@ -95,7 +98,7 @@ function computeGeodesic(state, rs, E) { // compute Schwarzschild geodesic equat
 
   // const r_acc = ((-rs / (2 * r * r)) * dt * dt) + (rs / (2 * r * r * f) * dr * dr) + (r * f * dphi * dphi);
   const r_acc = // Simplified angular term. From "r*f = r(1-rs/r)" to "r-s". It prevents numerical issues near the event horizon.
-    -(rs / (2 * r * r)) *f * (dt * dt)
+    -(rs / (2 * r * r)) * f * (dt * dt)
     + (rs / (2 * r * r * f)) * (dr * dr)
     + (r - rs) * (dphi * dphi);
 

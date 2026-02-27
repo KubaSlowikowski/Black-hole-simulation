@@ -3,7 +3,7 @@ import { config } from '../config';
 
 export const LIGHT_SPEED = 0.01;
 
-export class Photon {
+export class Photon2D {
 
   constructor(initialPosition, dr, dphi, E, L) {
     this.position = initialPosition.clone();
