@@ -6,6 +6,7 @@ import fragmentShader from './shaders/fragmentShader.glsl';
 import accretionDiscBloomFragmentShader from './shaders/accretionDiscBloomFragmentShader.glsl';
 import mixFragmentShader from './shaders/mixFragmentShader.glsl';
 import {config} from './config';
+import gsap from 'gsap';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import {BlackHole} from './objects/blackHole';
 import {EffectComposer, OutputPass, RenderPass, ShaderPass, UnrealBloomPass} from 'three/addons';
@@ -42,45 +43,45 @@ controls.enableDamping = true;
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 
 const uniforms = {
-  u_schwarzschildRadius: {value: blackHole.rs},
-  u_blackHolePosition: {value: blackHole.position},
+  u_schwarzschildRadius: { value: blackHole.rs },
+  u_blackHolePosition: { value: blackHole.position },
 
-  u_eps: {value: 0.01},
-  u_maxDis: {value: 30 * blackHole.rs},
-  u_maxSteps: {value: 2500},
-  u_stepSize: {value: config.PHOTON_STEP_SIZE / 2},
+  u_eps: { value: 0.01 },
+  u_maxDis: { value: 30 * blackHole.rs },
+  u_maxSteps: { value: 2500 },
+  u_stepSize: { value: config.PHOTON_STEP_SIZE / 2 },
 
-  u_accretionDisc_outerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.OUTER_RADIUS_MULTIPLIER},
-  u_accretionDisc_innerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.INNER_RADIUS_MULTIPLIER},
-  u_accretionDisc_thickness: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.THICKNESS},
+  u_accretionDisc_outerRadiusMultiplier: { value: BLACK_HOLE_CONFIG.ACCRETION_DISC.OUTER_RADIUS_MULTIPLIER },
+  u_accretionDisc_innerRadiusMultiplier: { value: BLACK_HOLE_CONFIG.ACCRETION_DISC.INNER_RADIUS_MULTIPLIER },
+  u_accretionDisc_thickness: { value: BLACK_HOLE_CONFIG.ACCRETION_DISC.THICKNESS },
 
-  u_camPos: {value: new THREE.Vector3().copy(camera.position)},
-  u_camToWorldMat: {value: new THREE.Matrix4().copy(camera.matrixWorld)},
-  u_camInvProjMat: {value: new THREE.Matrix4().copy(camera.projectionMatrixInverse)},
+  u_camPos: { value: new THREE.Vector3().copy(camera.position) },
+  u_camToWorldMat: { value: new THREE.Matrix4().copy(camera.matrixWorld) },
+  u_camInvProjMat: { value: new THREE.Matrix4().copy(camera.projectionMatrixInverse) },
 
-  u_backgroundCube: {value: backgroundTexture}
+  u_backgroundCube: { value: backgroundTexture }
 };
 
 const uniformsForBloomEffectOnly = {
-  u_schwarzschildRadius: {value: blackHole.rs},
-  u_blackHolePosition: {value: blackHole.position},
+  u_schwarzschildRadius: { value: blackHole.rs },
+  u_blackHolePosition: { value: blackHole.position },
 
-  u_eps: {value: 0.1},
-  u_maxDis: {value: 30 * blackHole.rs},
-  u_maxSteps: {value: 1000},
-  u_stepSize: {value: config.PHOTON_STEP_SIZE / 2},
+  u_eps: { value: 0.1 },
+  u_maxDis: { value: 30 * blackHole.rs },
+  u_maxSteps: { value: 1000 },
+  u_stepSize: { value: config.PHOTON_STEP_SIZE / 2 },
 
-  u_accretionDisc_outerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.OUTER_RADIUS_MULTIPLIER},
-  u_accretionDisc_innerRadiusMultiplier: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.INNER_RADIUS_MULTIPLIER},
-  u_accretionDisc_thickness: {value: BLACK_HOLE_CONFIG.ACCRETION_DISC.THICKNESS},
+  u_accretionDisc_outerRadiusMultiplier: { value: BLACK_HOLE_CONFIG.ACCRETION_DISC.OUTER_RADIUS_MULTIPLIER },
+  u_accretionDisc_innerRadiusMultiplier: { value: BLACK_HOLE_CONFIG.ACCRETION_DISC.INNER_RADIUS_MULTIPLIER },
+  u_accretionDisc_thickness: { value: BLACK_HOLE_CONFIG.ACCRETION_DISC.THICKNESS },
 
-  u_camPos: {value: new THREE.Vector3().copy(camera.position)},
-  u_camToWorldMat: {value: new THREE.Matrix4().copy(camera.matrixWorld)},
-  u_camInvProjMat: {value: new THREE.Matrix4().copy(camera.projectionMatrixInverse)},
+  u_camPos: { value: new THREE.Vector3().copy(camera.position) },
+  u_camToWorldMat: { value: new THREE.Matrix4().copy(camera.matrixWorld) },
+  u_camInvProjMat: { value: new THREE.Matrix4().copy(camera.projectionMatrixInverse) },
 
-  u_accretionDiscTexture: {value: accretionDiscTexture},
+  u_accretionDiscTexture: { value: accretionDiscTexture },
 
-  u_time: {value: 0.0}
+  u_time: { value: 0.0 }
 };
 
 const geometry = new THREE.PlaneGeometry();
@@ -115,7 +116,7 @@ const bloomPass = new UnrealBloomPass(
 const bloomRenderTarget = new THREE.WebGLRenderTarget(
   resolution.width,
   resolution.height,
-  {type: THREE.HalfFloatType}
+  { type: THREE.HalfFloatType }
 );
 const bloomComposer = new EffectComposer(renderer, bloomRenderTarget);
 // Scene is rendered implicitly by EffectComposer, because we will set it before render()
@@ -129,8 +130,8 @@ const mainRenderPass = new RenderPass(scene, camera);
 const mixPass = new ShaderPass(
   new THREE.ShaderMaterial({
     uniforms: {
-      baseTexture: {value: null},
-      bloomTexture: {value: bloomComposer.renderTarget2.texture}
+      baseTexture: { value: null },
+      bloomTexture: { value: bloomComposer.renderTarget2.texture }
     },
     vertexShader: vertexShader,
     fragmentShader: mixFragmentShader,
@@ -194,7 +195,7 @@ function animate(time) {
   controls.update();
   // stats.update();
 
-  if(BLACK_HOLE_CONFIG.ACCRETION_DISC.ROTATION.ENABLED) {
+  if (BLACK_HOLE_CONFIG.ACCRETION_DISC.ROTATION.ENABLED) {
     uniformsForBloomEffectOnly.u_time.value = BLACK_HOLE_CONFIG.ACCRETION_DISC.ROTATION.SPEED * time / 1000;
   }
 
@@ -215,4 +216,111 @@ window.addEventListener('resize', () => {
   renderer.setSize(resolution.width, resolution.height);
   bloomComposer.setSize(resolution.width, resolution.height);
   finalComposer.setSize(resolution.width, resolution.height);
+});
+
+const tl = gsap.timeline();
+window.addEventListener('load', () => {
+  controls.enabled = false;
+
+  tl.to(controls.target, {
+    x: 100,
+    y: 0,
+    z: 0,
+    duration: 2,
+    ease: 'power2.inOut'
+  });
+
+  tl.to(camera.position, {
+    x: -5,
+    y: 5,
+    z: 14,
+    duration: 6,
+    ease: "sine.in"
+  }, "<");  // "<" = startuj w tym samym momencie co poprzedni tween
+
+  tl.to(controls.target, {
+    x: 0,
+    y: 0,
+    z: 0,
+    duration: 2,
+    ease: 'power2.inOut'
+  });
+
+  // move away
+  tl.to(camera.position, {
+    x: 20,
+    y: 6,
+    z: 20,
+    duration: 4,
+    ease: "none"
+  }, "<");  // "<" = startuj razem z poprzednim twenem
+
+  // go down
+  tl.to(camera.position, {
+    x: 20,
+    y: -3,
+    z: 20,
+    duration: 4,
+    ease: "none"
+  });
+
+  // Obrót wokół punktu (0, 0, 0) przez 2 sekundy
+  const orbitDuration = 6;
+  const orbitAngle = Math.PI / 5;
+
+  // Oblicz początkowy kąt i promień na podstawie obecnej pozycji
+  const startX = 20;
+  const startZ = 20;
+  const startY = -3;
+  const radius = Math.sqrt(startX * startX + startZ * startZ);
+  const startAngle = Math.atan2(startZ, startX);
+
+  // Animuj kąt obrotu
+  const rotationData = { angle: 0 };
+  tl.to(rotationData, {
+    angle: orbitAngle,
+    duration: orbitDuration,
+    ease: "power1.inOut",
+    onUpdate: () => {
+      const currentAngle = startAngle + rotationData.angle;
+      camera.position.x = Math.cos(currentAngle) * radius;
+      camera.position.z = Math.sin(currentAngle) * radius;
+      camera.position.y = startY;
+
+      // Kamera patrzy na środek (0, 0, 0) podczas obrotu
+      camera.lookAt(0, 0, 0);
+    }
+  });
+
+  // tl.to(camera.position, {
+  //   x: 25,
+  //   y: -7.5,
+  //   z: 25,
+  //   duration: 6,
+  //   ease: "sine.in"
+  // });
+  // tl.to(camera.position, {
+  //   x: 0,
+  //   y: 3,
+  //   z: 25,
+  //   duration: 6,
+  //   ease: "none"
+  // });
+  // tl.to(camera.position, {
+  //   x: -17,
+  //   y: 3,
+  //   z: 17,
+  //   duration: 6,
+  //   ease: "none"
+  // });
+  //
+  tl.to(camera.position, {
+    x: 0,
+    y: 5,
+    z: 3,
+    duration: 15,
+    ease: "power3.out"
+  });
+
+  controls.enabled= true;
 });

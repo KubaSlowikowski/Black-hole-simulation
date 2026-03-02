@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "dat.gui": "^0.7.9",
+    "gsap": "^3.14.2",
     "three": "^0.180.0",
     "webpack-glsl-loader": "^1.0.1"
   }

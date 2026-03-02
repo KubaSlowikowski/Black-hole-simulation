@@ -8,13 +8,13 @@ export const config = {
   PHOTON_STEP_SIZE: 0.1,
   RESOLUTION: {
     // width: 2100,
-    width: 1000,
+    width: 400,
     // height: 1400
-    height: 750
+    height: 300
   },
   CAMERA: {
-    x: 37,
+    x: -25,
     y: 2.5,
-    z: 5
+    z: 0
   }
 };
