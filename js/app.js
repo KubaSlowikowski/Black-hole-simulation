@@ -146,6 +146,10 @@ function rk4Step(photon, stepSize) {
   let theta = Math.acos(z / r);
   const phi = Math.atan2(y, x);
 
+  const dr = photon.dr;
+  const dphi = photon.dphi;
+  const dtheta = photon.dtheta;
+
   // Clamp theta to avoid singularities
   const thetaEpsilon = 1e-6;
   theta = Math.max(thetaEpsilon, Math.min(Math.PI - thetaEpsilon, theta));
