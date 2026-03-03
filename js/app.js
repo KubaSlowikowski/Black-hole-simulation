@@ -145,7 +145,6 @@ function rk4Step(photon, stepSize) {
   const r = Math.hypot(x, y, z);
   let theta = Math.acos(z / r);
   const phi = Math.atan2(y, x);
-  const theta = Math.acos(z / r);
 
   // Clamp theta to avoid singularities
   const thetaEpsilon = 1e-6;
