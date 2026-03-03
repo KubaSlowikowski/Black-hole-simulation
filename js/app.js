@@ -7,10 +7,12 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 function createPhoton(rs, i, N) {
 
-  const ySpread = 10 * rs;
-  const zSpread = 10 * rs;
+  // const ySpread = 10 * rs;
+  const ySpread = Math.random() * 10 * rs;
+  // const zSpread = 10 * rs;
+  const zSpread = Math.random() * 10 * rs;
 
-  const x0 = 5 * rs; // Fixed x position, from the black hole
+  const x0 = Math.random() * 5 * rs + 40; // Fixed x position, from the black hole
   const y0 = -ySpread / 2 + (ySpread * i) / (N - 1); // Vary y position
   const z0 = -zSpread / 2 + (zSpread * i) / (N - 1); // Vary y position
 
@@ -81,7 +83,7 @@ scene.add(gridHelper);
 const blackHole = new BlackHole(config.BLACK_HOLE_MASS, new THREE.Vector3(0, 0, 0));
 blackHole.render(scene);
 
-const NUMBER_OF_PHOTONS = 1;
+const NUMBER_OF_PHOTONS = 300;
 const photons = [];
 for (let i = 1; i <= NUMBER_OF_PHOTONS; i++) {
   const photon = createPhoton(blackHole.rs, i, NUMBER_OF_PHOTONS + 1);

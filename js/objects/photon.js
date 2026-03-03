@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { config } from '../config';
 
-export const LIGHT_SPEED = 0.01;
-
 export class Photon {
 
   constructor(initialPosition, dr, dphi, dtheta, E, L) {
