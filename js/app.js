@@ -14,7 +14,7 @@ function createPhoton(rs, i, N) {
 
   const x0 = Math.random() * 5 * rs + 40; // Fixed x position, from the black hole
   const y0 = -ySpread / 2 + (ySpread * i) / (N - 1); // Vary y position
-  const z0 = -zSpread / 2 + (zSpread * i) / (N - 1); // Vary y position
+  const z0 = -zSpread / 2 + (zSpread * i) / (N - 1); // Vary z position
 
   // Convert to polar coordinates
   const r0 = Math.hypot(x0, y0, z0);
