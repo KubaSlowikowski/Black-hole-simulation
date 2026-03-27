@@ -37,16 +37,19 @@ float accretionDiscDist(vec3 p) {
     return max(radialDist, verticalDist);
 }
 
+
+// SDF - signed distance function
 float scene(vec3 p) {
-    // distance to sphere 1
+    // distance to black hole
     float blackHoleDist = blackHoleDist(p);
 
-    // distance to sphere 2
+    // distance to accretion disc
     float accretionDiscColor = accretionDiscDist(p);
 
-    // return the minimum distance between the two spheres
+    // return the minimum distance between the two objects
     return min(blackHoleDist, accretionDiscColor);
 }
+
 float rayTrace(vec3 ro, vec3 rd)
 {
     float d = 0.0; // total distance travelled
@@ -70,16 +73,16 @@ float rayTrace(vec3 ro, vec3 rd)
 vec3 sceneCol(vec3 p)
 {
     float blackHoleDist = blackHoleDist(p);
-    float sphere2Dis = accretionDiscDist(p);
+    float accretionDiscDist = accretionDiscDist(p);
 
-    vec3 color1 = vec3(1, 0, 0); // Red
-    vec3 blackHoleColor = vec3(0.3, 0.3, 0.3);
+    vec3 accretionDiscColor = vec3(1, 0, 0); // Red
+    vec3 blackHoleColor = vec3(0.0, 0.0, 0.0);
 
     // Return color based on which object is closer
-    if (blackHoleDist < sphere2Dis) {
+    if (blackHoleDist < accretionDiscDist) {
         return blackHoleColor;
     } else {
-        return color1;
+        return accretionDiscColor;
     }
 }
 
