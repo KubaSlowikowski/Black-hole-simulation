@@ -4,6 +4,9 @@ This project is an interactive 3D visualization of how light bends around a **no
 
 In simple terms: it's a playground where you can *see* how general relativity bends light rays near a black hole.
 
+Check out my YouTube video where I explain the physics and implementation details of the project:
+https://www.youtube.com/watch?v=PSfaJSl_aVg
+
 <img src="/screenshots/blackhole.gif" width="500" alt="Black Hole Animation"/>
 
 [<img src="/screenshots/1.png" width="500"/>](1.png)
